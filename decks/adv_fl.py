@@ -1,0 +1,233 @@
+"""Module G — Federated Learning (Ch.19)."""
+
+
+def slides() -> list:
+    return [
+        ("title", "Module G — Federated Learning on the Edge",
+         "Ch.19 · Advanced · VM {{VM_IP}}",
+         "Advanced · Ch.19 — Federated Learning · requires Module D (3 Active boards)"),
+
+        ("section", "Federated Learning theory", "Ch.19 — motivation, architecture, taxonomy"),
+
+        ("theory", "Why Federated Learning? (Ch.19)", [
+            "Centralized ML: collect all raw data to cloud — privacy, GDPR, bandwidth, latency risks",
+            "FL: train collaboratively — raw data never leaves edge devices or local storage",
+            "Only model weight updates (gradients/parameters) sent to aggregation server each round",
+            "Critical for healthcare, finance, smart cities, IoT fleets with sensitive local data",
+            "Regulatory frameworks (GDPR, DPDP, HIPAA) restrict data centralization — FL enables compliance",
+            "Book motivation section cites real-world cases: hospitals, banks, cross-device IoT",
+        ], "Ch.19 · FL motivation · regulatory compliance section"),
+
+        ("theory", "Centralized vs federated — operational contrast (Ch.19)", [
+            "Centralized: ETL pipeline uploads datasets → single GPU cluster trains monolithic model",
+            "Federated: N clients train locally → server aggregates → global model improves iteratively",
+            "Centralized bottleneck: network upload of full dataset from each edge site",
+            "Federated bottleneck: straggler clients, non-IID data distribution, communication rounds",
+            "S4T value proposition: IoTronic deploys FL client plugin to fleet — operational layer for FL",
+            "Lab demo: 3 boards, 3 CSV files, 1 Flower server — minimal horizontal FL topology",
+        ], "Ch.19 · centralized vs federated comparison"),
+
+        ("theory", "FL architecture components (Ch.19)", [
+            "Server (Flower in lab): orchestrates rounds, aggregates updates (FedAvg algorithm)",
+            "Clients: local training on board-resident dataset — heart_1/2/3.csv in ch19 demo",
+            "Stack4Things: async plugin injected on each board via IoTronic — Worker connects to server",
+            "Direct TCP to Flower server on VM host — lightweight for lab; MQTT optional in field",
+            "Book figure: fig:chap19:federated_learning_architecture — 3 clients + 1 server",
+            "Each client runs local epochs before sending weight update — not every mini-batch",
+        ], "Ch.19 · fig:chap19:federated_learning_architecture · listing server.py"),
+
+        ("theory", "FedAvg aggregation algorithm (Ch.19)", [
+            "Federated Averaging: server computes weighted average of client model parameters",
+            "Weight proportional to local dataset size — larger datasets influence global model more",
+            "Round k: server broadcasts global model → clients train locally → clients send updates",
+            "Server aggregates → broadcasts updated global model → repeat for FL_ROUNDS iterations",
+            "Convergence depends on data IID-ness — lab CSVs designed with compatible schema",
+            "Flower framework abstracts transport — same FedAvg logic in lab and production",
+        ], "Ch.19 · FedAvg · Flower framework references"),
+
+        ("theory", "FL taxonomy — four categories (Ch.19)", [
+            "Horizontal FL: same features, different samples — hospitals, IoT boards (lab demo type)",
+            "Vertical FL: different features, same samples — bank + credit card company collaboration",
+            "Cross-silo: organizations with stable connectivity and rich local datasets",
+            "Cross-device: many mobile/IoT clients, intermittent connectivity, small local data",
+            "Lab demo: horizontal cross-silo — 3 boards, same CSV schema, different row samples",
+            "Book taxonomy table helps students classify real-world FL deployment scenarios",
+        ], "Ch.19 · FL types · horizontal vs vertical"),
+
+        ("theory", "Non-IID data challenges (Ch.19)", [
+            "Real edge data often non-IID: each board sees different distribution of sensor readings",
+            "Non-IID slows convergence — may require more FL_ROUNDS or specialized aggregation",
+            "Lab heart CSVs are mildly non-IID by design — demonstrates realistic edge heterogeneity",
+            "Production mitigations: FedProx, SCAFFOLD, personalization layers — beyond lab scope",
+            "Students should observe per-round accuracy variance in Flower server log output",
+            "Module D fleet heterogeneity (3 boards) mirrors cross-silo non-IID scenario",
+        ], "Ch.19 · non-IID discussion · advanced FL algorithms footnote"),
+
+        ("theory", "S4T + FL integration — plugin model (Ch.19)", [
+            "Async plugin Worker in client.py connects to Flower server as FL client process",
+            "Local training loop: read CSV → train epochs → send weight update via Flower gRPC",
+            "Server-side evaluation: centralized loss/accuracy view printed each aggregation round",
+            "Plugin lifecycle: create in IoTronic → inject per board → Start while server running",
+            "Different CSV per board: heart_1.csv on alpha, heart_2.csv on beta, heart_3.csv on gamma",
+            "Repo: training/repos/ch19 — server.py + client.py + sample datasets",
+        ], "Ch.19 · ch19 repo plugin + server.py listing"),
+
+        ("theory", "Privacy and regulatory framing (Ch.19)", [
+            "GDPR Article 25: data protection by design — FL keeps raw data at edge by default",
+            "DPDP (India), HIPAA (US healthcare): restrict cross-border raw data transfer",
+            "FL enables smarter systems while data stays on edge nodes under local jurisdiction",
+            "S4T provides deployment vehicle (IoTronic inject) — FL provides training methodology",
+            "Production extensions: differential privacy noise on updates, secure aggregation (crypto)",
+            "Lab scope: demonstrate FL workflow — not production-grade privacy guarantees",
+        ], "Ch.19 · regulatory compliance · privacy-preserving FL footnote"),
+
+        ("theory", "FL challenges and open issues (Ch.19)", [
+            "System heterogeneity: boards differ in CPU, RAM, bandwidth — stragglers delay aggregation rounds.",
+            "Client availability: intermittent connectivity reduces effective participants per round.",
+            "Model heterogeneity: incompatible architectures complicate weight merging and convergence.",
+            "Statistical heterogeneity (Non-IID): skewed local data degrades global model accuracy.",
+            "Model update security: poisoning and backdoor attacks via malicious local training data.",
+            "Mitigations include FedProx, secure aggregation, differential privacy — research beyond lab scope.",
+        ], "Ch.19 § Challenges and open issues · FedProx · secure aggregation footnote"),
+
+        ("theory", "FL platform landscape (Ch.19)", [
+            "Open source: TensorFlow Federated, Flower (lab choice), PySyft, LEAF benchmarks, FedML.",
+            "Enterprise: NVIDIA FLARE, IBM FL — production orchestration and compliance tooling.",
+            "Flower chosen in ch19 repo for lightweight Python server + edge client plugin integration.",
+            "Platform choice depends on scale, privacy requirements, and edge hardware constraints.",
+            "S4T contribution: same IoTronic inject lifecycle deploys FL client Workers on real boards.",
+            "Google/Apple on-device FL cited in book as industry validation of federated approach.",
+        ], "Ch.19 § Core requirements · tools and frameworks"),
+
+        ("image", "FL architecture — 3 edge clients",
+         "diagrams/fl-architecture.png",
+         "Flower server on VM host + 3 LR clients on :1474/:1475/:1476 (Module D)"),
+
+        ("image", "UML sequence — Federated Learning round (Module G)",
+         "diagrams/seq-fl-round.png",
+         "Broadcast weights → local train → upload gradients → FedAvg"),
+
+        ("content", "Module G — learning objectives", [
+            "Explain FL motivation, FedAvg, and horizontal cross-silo taxonomy (Ch.19)",
+            "Deploy Flower aggregation server on VM host",
+            "Inject FL async client plugin on 3 Active boards with distinct CSV datasets",
+            "Observe ≥2 aggregation rounds complete (FL_ROUNDS=2 classroom pacing)",
+            "Pass validate-lab-fl.sh — bridge Ch.19 AI methodology with Ch.13–14 S4T stack",
+        ]),
+
+        ("content", "Module G — 60-minute timeline", [
+            "0–20 min  — FL theory: motivation, FedAvg, taxonomy, S4T integration",
+            "20–25 min — DEMO GOAL review + prerequisites check (Module D)",
+            "25–40 min — HANDS-ON: start Flower server + deploy client plugins",
+            "40–55 min — HANDS-ON: Start plugins, watch aggregation rounds in server log",
+            "55–60 min — Validate + privacy/regulatory discussion wrap-up",
+        ]),
+
+        ("demo", "What the FL demo proves — demo goals", [
+            "Edge boards participate in distributed ML without sharing raw CSV data across boards",
+            "IoTronic deploys identical FL client plugin code to heterogeneous Active boards",
+            "Aggregation improves global model accuracy over successive rounds (FL_ROUNDS=2 in class)",
+            "Bridges Ch.19 AI methodology with Ch.13–14 S4T operational stack (inject + Start)",
+            "Students can classify lab setup as horizontal cross-silo FL from Ch.19 taxonomy",
+            "Flower server log shows round completion — tangible evidence of federated aggregation",
+        ]),
+
+        ("content", "Prerequisites & resource constraints", [
+            "Module D complete — 3 Active boards on {{VM_IP}}:1474/:1475/:1476",
+            "Repo: training/repos/ch19 (server.py, client.py, heart_*.csv)",
+            "Classroom pacing: FL_ROUNDS=2 — keeps session within 60 minutes",
+            "Do NOT run simultaneously with Module H K3s — RAM gate: free -h ≥ 2 GB during FL",
+            "Horizon {{HZ_CRED}} · LR dashboards {{LR_CRED}} on all three instances",
+        ]),
+
+        ("section", "Hands-on — Flower server setup", "Install dependencies + start aggregation"),
+
+        ("hands_on", "Step 1 — Install Flower and ML dependencies", [
+            "$ pip install flwr torch pandas scikit-learn",
+            "# Or use helper: training/experiments/federated-learning/start-server.sh",
+            "Verify: python3 -c \"import flwr; print(flwr.__version__)\"",
+        ]),
+
+        ("theory", "Flower server configuration (Ch.19)", [
+            "server.py in ch19 repo: configures FedAvg strategy and number of rounds",
+            "FL_ROUNDS env var controls aggregation iterations — set to 2 for classroom demo",
+            "Server binds all interfaces on port 8080 — must be reachable from LR Docker containers",
+            "LR containers reach VM host via docker bridge gateway IP or host network mode",
+            "Minimum clients: 3 (matches 3 boards from Module D) — server waits for all before round",
+            "Server log prints per-round aggregated metrics — instructor projects for class visibility",
+        ], "Ch.19 · server.py listing · Flower ServerConfig"),
+
+        ("hands_on", "Step 2 — Start Flower aggregation server", [
+            "$ cd training/repos/ch19",
+            "$ FL_ROUNDS=2 python3 server.py",
+            "Keep terminal open — server must run while client plugins connect",
+            "Expected: waiting for clients message, then round 1/2 aggregation output",
+        ]),
+
+        ("section", "Hands-on — deploy FL client plugins", "One async plugin per board"),
+
+        ("hands_on", "Step 3 — Create and inject FL client plugin", [
+            "Horizon → Plugins → Create async plugin from ch19 client.py template",
+            "Create three plugin instances OR one plugin injected on three boards",
+            "Configure dataset path: heart_1.csv on alpha, heart_2.csv on beta, heart_3.csv on gamma",
+            "Server address in plugin params: {{VM_IP}}:8080 (Flower server on VM host)",
+        ]),
+
+        ("image", "Horizon IoT — Plugins dashboard (FL client deploy)",
+         "chapter14/horizon-plugins-dashboard.png",
+         "Three async plugins — Callable=OFF → use Start action · login {{HZ_CRED}}", "", True),
+
+        ("image", "Multi-board topology for FL clients",
+         "diagrams/multiboard-fleet.png",
+         "3 LR clients :1474/:1475/:1476 → single Flower server {{VM_IP}}:8080"),
+
+        ("hands_on", "Step 4 — Start FL clients on all three boards", [
+            "While Flower server is running: Plugins → FL client → Start on board-alpha",
+            "Start on board-beta · Start on board-gamma",
+            "Watch server terminal: clients connect → round 1 begins → aggregation → round 2",
+            "Each LR log: docker logs lightning-rod-2 — local training progress messages",
+        ]),
+
+        ("theory", "Client plugin execution flow (Ch.19)", [
+            "Start action launches async Worker — connects to Flower server via gRPC/TCP",
+            "Worker loads local CSV — initializes model with global weights from server",
+            "Local training: N local epochs on board CPU — sends weight delta to server",
+            "Server aggregates all 3 client updates — broadcasts new global weights",
+            "Round 2: clients receive updated global model — repeat local training",
+            "Stop: Interrupt plugin on each board after rounds complete — clean shutdown",
+        ], "Ch.19 · client.py Worker class · async plugin pattern"),
+
+        ("theory", "Troubleshooting FL connectivity (Ch.19 lab)", [
+            "Clients cannot connect: verify Flower server IP reachable from LR container network",
+            "Use docker bridge gateway IP if {{VM_IP}}:8080 not reachable from inside containers",
+            "Server stuck waiting: ensure all 3 Start actions fired — minimum client count not met",
+            "OOM on board: reduce local epochs in client.py params — edge boards have limited RAM",
+            "Plugin error on Start: check client.py syntax and flwr/torch installed in LR image",
+            "validate-lab-fl.sh automates connectivity and round-completion checks",
+        ], "training/experiments/federated-learning/ · validate-lab-fl.sh"),
+
+        ("theory", "FL in the Cloud Continuum research context (Ch.19 + Ch.11)", [
+            "Ch.11 Type 4 experiments: AI/ML workflows including federated learning at edge",
+            "SLICES RI multi-site FL: clients on different European sites, server on cloud slice",
+            "S4T IoTronic inject scales FL client deployment — same pattern as Module D fleet ops",
+            "Crossplane Workflow CRD could declare FL experiment: server + N client plugins + datasets",
+            "Edge-board FL preserves data sovereignty requirements of SLICES partner institutions",
+            "Lab on {{VM_IP}} is minimal horizontal FL — production scales to cross-silo federation",
+        ], "Ch.19 + Ch.11 Type 4 · SLICES RI FL experiment pattern"),
+
+        ("section", "Validate & wrap-up", "Confirm aggregation + Module H exclusion"),
+
+        ("hands_on", "Step 5 — Validate FL lab", [
+            "$ cd training && ./validate-lab-fl.sh",
+            "Watch server log for: Round 1 complete · Round 2 complete · final accuracy",
+            "Interrupt FL plugins on all boards after successful validation",
+        ]),
+
+        ("content", "Module G checklist & resource note", [
+            "□ Flower server shows 2 aggregation rounds completing with 3 clients",
+            "□ Three board plugins connected and contributed weight updates",
+            "□ validate-lab-fl.sh passes",
+            "□ free -h ≥ 2 GB during FL — do NOT run K3s Blueprint (Module H) concurrently",
+            "□ Students articulate horizontal cross-silo FL classification from Ch.19 taxonomy",
+        ]),
+    ]

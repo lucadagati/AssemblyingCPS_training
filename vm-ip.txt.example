@@ -1,0 +1,3 @@
+# Copy to vm-ip.txt and set your lab host IP (one line, no comments):
+# 192.168.1.100
+{{VM_IP}}

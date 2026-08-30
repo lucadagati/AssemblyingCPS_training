@@ -1,0 +1,9 @@
+{
+  "host": "{{VM_IP}}",
+  "board": "board-alpha",
+  "service": "weather-wot",
+  "book_port": 8080,
+  "lab_port": 8088,
+  "cloud_port": 0,
+  "verified": false
+}

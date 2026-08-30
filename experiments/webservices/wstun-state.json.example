@@ -1,0 +1,9 @@
+{
+  "host": "{{VM_IP}}",
+  "board": "board-alpha",
+  "board_uuid": "",
+  "service": "lr-nginx-demo",
+  "local_port": 50000,
+  "cloud_port": 0,
+  "verified": false
+}

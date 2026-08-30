@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+vm-ip.txt
+experiments/webservices/wstun-state.json
+experiments/webservices/weather-state.json
+repos/

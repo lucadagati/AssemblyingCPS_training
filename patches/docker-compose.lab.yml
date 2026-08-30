@@ -1,0 +1,119 @@
+# Lab overlay — Cap. 13-19 hands-on training
+# Usage (from training/repos/ch13):
+#   docker compose -f docker-compose.yml -f ../../patches/docker-compose.lab.yml up -d
+#
+# Optional multi-board LR instances: lightning-rod (1474), lightning-rod-2 (1475), lightning-rod-3 (1476)
+
+services:
+  # Fix: debian:buster apt repos EOL — use Alpine + openssl for CA generation
+  ca_service:
+    image: alpine:3.19
+    container_name: ca_service
+    networks:
+      - s4t
+    volumes:
+      - iotronic_ssl:/etc/ssl/iotronic
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        apk add --no-cache openssl
+        mkdir -p /etc/ssl/iotronic && cd /etc/ssl/iotronic
+        if [ -f crossbar.pem ] && [ -f crossbar.key ]; then
+          echo "[INFO] Certificates already present"
+        else
+          echo "[INFO] Generating Root CA and Crossbar certs..."
+          openssl genrsa -out iotronic_CA.key 2048
+          openssl req -x509 -new -nodes -key iotronic_CA.key -sha256 -days 18250 \
+            -subj "/C=IT/O=iotronic" -out iotronic_CA.pem
+          openssl genrsa -out crossbar.key 2048
+          openssl req -new -key crossbar.key -subj "/C=IT/O=iotronic/CN=crossbar" -out crossbar.csr
+          openssl x509 -req -in crossbar.csr -CA iotronic_CA.pem -CAkey iotronic_CA.key \
+            -CAcreateserial -out crossbar.pem -days 18250 -sha256
+          chmod 644 iotronic_CA.key iotronic_CA.pem crossbar.key crossbar.pem
+          echo "[INFO] Certificates generated"
+        fi
+        tail -f /dev/null
+
+  lightning-rod:
+    image: docker.io/mdslab/lrod:compose
+    volumes:
+      - lr_var:/var/lib/iotronic
+      - lr_le:/etc/letsencrypt/
+      - lr_nginx:/etc/nginx
+      - lr_confs:/etc/iotronic/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - lr_data:/opt/data
+
+  lightning-rod-2:
+    image: docker.io/mdslab/lrod:compose
+    container_name: lightning-rod-2
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - s4t
+    ports:
+      - "1475:1474"
+    volumes:
+      - lr2_var:/var/lib/iotronic
+      - lr2_le:/etc/letsencrypt/
+      - lr2_nginx:/etc/nginx
+      - lr2_confs:/etc/iotronic/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - lr2_data:/opt/data
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/sh
+    command: >
+      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+
+  lightning-rod-3:
+    image: docker.io/mdslab/lrod:compose
+    container_name: lightning-rod-3
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - s4t
+    ports:
+      - "1476:1474"
+    volumes:
+      - lr3_var:/var/lib/iotronic
+      - lr3_le:/etc/letsencrypt/
+      - lr3_nginx:/etc/nginx
+      - lr3_confs:/etc/iotronic/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - lr3_data:/opt/data
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/sh
+    command: >
+      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    restart: unless-stopped
+    networks:
+      - s4t
+    ports:
+      - "8086:8086"
+    environment:
+      INFLUXDB_HTTP_AUTH_ENABLED: "true"
+      INFLUXDB_ADMIN_USER: admin
+      INFLUXDB_ADMIN_PASSWORD: admin
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+
+volumes:
+  influxdb_data:
+  lr_data:
+  lr2_var:
+  lr2_le:
+  lr2_nginx:
+  lr2_confs:
+  lr2_data:
+  lr3_var:
+  lr3_le:
+  lr3_nginx:
+  lr3_confs:
+  lr3_data:
