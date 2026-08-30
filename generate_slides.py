@@ -109,21 +109,24 @@ def _title_card(slide, title, y, color=NAVY, size=28):
 
 
 def _bullet_lines(slide, bullets, top, body_color=GRAY, compact=False, width=11.4):
-    # Card background for readability
-    card_h = min(Inches(5.6), Inches(0.35 * len(bullets) + 0.8))
+    card_top = top - Inches(0.08)
+    card_h = Inches(6.95) - card_top
     card = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.55), top - Inches(0.08), Inches(12.2), card_h
+        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.55), card_top, Inches(12.2), card_h
     )
     card.fill.solid()
     card.fill.fore_color.rgb = WHITE
     card.line.color.rgb = TEAL_LIGHT
     card.line.width = Pt(0.75)
 
-    body = slide.shapes.add_textbox(Inches(0.85), top + Inches(0.05), Inches(width), card_h - Inches(0.2))
+    body = slide.shapes.add_textbox(Inches(0.85), top + Inches(0.05), Inches(width), card_h - Inches(0.25))
     tf = body.text_frame
     tf.word_wrap = True
-    size_main = 15 if compact else 17
-    size_sub = 14 if compact else 15
+    n = len(bullets)
+    if compact:
+        size_main, size_sub = (16, 15) if n >= 6 else (17, 16)
+    else:
+        size_main, size_sub = (17, 16) if n >= 6 else (19, 17)
     for i, line in enumerate(bullets):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         raw = line.strip()
@@ -131,7 +134,7 @@ def _bullet_lines(slide, bullets, top, body_color=GRAY, compact=False, width=11.
         is_sub = raw.startswith("    ")
         if is_cmd:
             p.text = raw
-            _set_font(p, size=13, color=NAVY, name=MONO)
+            _set_font(p, size=14, color=NAVY, name=MONO)
         else:
             prefix = "    " if is_sub else "▸  "
             p.text = f"{prefix}{raw}" if not raw.startswith("▸") else raw
@@ -140,7 +143,7 @@ def _bullet_lines(slide, bullets, top, body_color=GRAY, compact=False, width=11.
         p.line_spacing = 1.15
 
 
-def add_title_slide(prs, title, subtitle="", footer=""):
+def add_title_slide(prs, title, subtitle="", footer="", notes=""):
     slide = blank_slide(prs, bg=NAVY)
     # Layered gradient effect
     band = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
@@ -157,14 +160,14 @@ def add_title_slide(prs, title, subtitle="", footer=""):
     box = slide.shapes.add_textbox(Inches(0.75), Inches(2.0), Inches(11.8), Inches(1.8))
     p = box.text_frame.paragraphs[0]
     p.text = title
-    _set_font(p, size=38, bold=True, color=WHITE)
+    _set_font(p, size=40, bold=True, color=WHITE)
 
     if subtitle:
         box2 = slide.shapes.add_textbox(Inches(0.75), Inches(3.85), Inches(11.5), Inches(1.4))
         for i, line in enumerate(subtitle.split("\n")):
             p2 = box2.text_frame.paragraphs[0] if i == 0 else box2.text_frame.add_paragraph()
             p2.text = line
-            _set_font(p2, size=20, color=TEAL_LIGHT)
+            _set_font(p2, size=22, color=TEAL_LIGHT)
             p2.space_after = Pt(4)
 
     if footer:
@@ -176,6 +179,8 @@ def add_title_slide(prs, title, subtitle="", footer=""):
     line.fill.solid()
     line.fill.fore_color.rgb = TEAL
     line.line.fill.background()
+    if notes:
+        slide.notes_slide.notes_text_frame.text = notes
     return slide
 
 
@@ -183,18 +188,18 @@ def add_content_slide(prs, title, bullets, notes="", hands_on=False, warn=False)
     if hands_on:
         slide = blank_slide(prs, bg=OFF_WHITE)
         _top_accent_bar(slide, TEAL)
-        top = _title_card(slide, title, Inches(0.55), color=NAVY, size=28)
+        top = _title_card(slide, title, Inches(0.55), color=NAVY, size=30)
         _bullet_lines(slide, bullets, top, body_color=GRAY)
     elif warn:
         slide = blank_slide(prs, bg=WARN_BG)
         _top_accent_bar(slide, WARN_AMBER)
         _pill_badge(slide, "⚠  BOOK ↔ LAB", Inches(0.55), Inches(0.32), Inches(1.55), Inches(0.36), WARN_AMBER)
-        top = _title_card(slide, title, Inches(0.78), color=RGBColor(0xBF, 0x36, 0x0C), size=26)
+        top = _title_card(slide, title, Inches(0.78), color=RGBColor(0xBF, 0x36, 0x0C), size=28)
         _bullet_lines(slide, bullets, top, body_color=GRAY, compact=False)
     else:
         slide = blank_slide(prs, bg=OFF_WHITE)
         _top_accent_bar(slide, NAVY_MID)
-        top = _title_card(slide, title, Inches(0.55), color=NAVY, size=28)
+        top = _title_card(slide, title, Inches(0.55), color=NAVY, size=30)
         _bullet_lines(slide, bullets, top, body_color=GRAY)
 
     _footer(slide)
@@ -217,14 +222,14 @@ def add_section_slide(prs, title, subtitle="", notes=""):
     tb = slide.shapes.add_textbox(Inches(0.8), Inches(2.35), Inches(11.5), Inches(1.2))
     p = tb.text_frame.paragraphs[0]
     p.text = title
-    _set_font(p, size=36, bold=True, color=WHITE)
+    _set_font(p, size=38, bold=True, color=WHITE)
     p.alignment = PP_ALIGN.CENTER
 
     if subtitle:
         sb = slide.shapes.add_textbox(Inches(0.8), Inches(3.65), Inches(11.5), Inches(0.9))
         sp = sb.text_frame.paragraphs[0]
         sp.text = subtitle
-        _set_font(sp, size=20, color=TEAL_LIGHT)
+        _set_font(sp, size=22, color=TEAL_LIGHT)
         sp.alignment = PP_ALIGN.CENTER
 
     if notes:
@@ -243,9 +248,9 @@ def add_theory_slide(prs, title, bullets, book_ref="", notes=""):
         ref = slide.shapes.add_textbox(Inches(8.5), Inches(0.32), Inches(4.5), Inches(0.45))
         rp = ref.text_frame.paragraphs[0]
         rp.text = book_ref[:70]
-        _set_font(rp, size=10, color=LIGHT_GRAY)
+        _set_font(rp, size=11, color=LIGHT_GRAY)
         rp.alignment = PP_ALIGN.RIGHT
-    top = _title_card(slide, title, Inches(0.78), color=NAVY, size=24)
+    top = _title_card(slide, title, Inches(0.78), color=NAVY, size=26)
     _bullet_lines(slide, bullets, top, GRAY, compact=True)
     _footer(slide, "Theory")
     if notes:
@@ -260,7 +265,7 @@ def add_demo_slide(prs, title, bullets, notes=""):
     bar.fill.fore_color.rgb = DEMO_ACCENT
     bar.line.fill.background()
     _pill_badge(slide, "DEMO", Inches(0.55), Inches(0.32), Inches(0.95), Inches(0.34), DEMO_ACCENT)
-    top = _title_card(slide, title, Inches(0.78), color=NAVY, size=24)
+    top = _title_card(slide, title, Inches(0.78), color=NAVY, size=26)
     _bullet_lines(slide, bullets, top, GRAY, compact=True)
     _footer(slide, "Demo")
     if notes:
@@ -271,7 +276,7 @@ def add_demo_slide(prs, title, bullets, notes=""):
 def add_code_slide(prs, title, code, notes=""):
     slide = blank_slide(prs, bg=OFF_WHITE)
     _top_accent_bar(slide, TEAL)
-    top = _title_card(slide, title, Inches(0.55), color=NAVY, size=26)
+    top = _title_card(slide, title, Inches(0.55), color=NAVY, size=28)
 
     box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.55), Inches(1.65), Inches(12.2), Inches(5.35))
     box.fill.solid()
@@ -298,7 +303,7 @@ def add_code_slide(prs, title, code, notes=""):
     for i, line in enumerate(code.strip().split("\n")):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.text = line
-        _set_font(p, size=11, color=CODE_TEXT, name=MONO)
+        _set_font(p, size=12, color=CODE_TEXT, name=MONO)
         p.space_after = Pt(2)
 
     _footer(slide, "Code")

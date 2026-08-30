@@ -17,7 +17,8 @@ def apply_deck(prs, items, add_image=None):
     for item in items:
         kind = item[0]
         if kind == "title":
-            add_title_slide(prs, item[1], item[2], item[3] if len(item) > 3 else "")
+            add_title_slide(prs, item[1], item[2], item[3] if len(item) > 3 else "",
+                            item[4] if len(item) > 4 else "")
         elif kind == "section":
             add_section_slide(prs, item[1], item[2] if len(item) > 2 else "",
                               item[3] if len(item) > 3 else "")

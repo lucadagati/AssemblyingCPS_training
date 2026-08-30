@@ -29,10 +29,10 @@ from generate_slides import (
 
 VM_IP = "{{VM_IP}}"
 
-# Max image area (inches) — keeps screenshots/diagrams inside slide + caption + footer
-IMG_MAX_W = 10.8
-IMG_MAX_H = 4.35
-IMG_FRAME_PAD = 0.08
+# Max image area (inches) — nearly full slide below compact title + footer
+IMG_MAX_W = 12.6
+IMG_MAX_H = 6.15
+IMG_FRAME_PAD = 0.06
 
 ALLOWED_IMAGES = {
     "chapter13/horizon-login.png",
@@ -110,14 +110,14 @@ def add_image_slide(prs, title, image_rel, caption="", notes="", hands_on=False)
     slide = blank_slide(prs, bg=OFF_WHITE)
     bar_color = TEAL if image_rel.startswith("diagrams/") else NAVY
     _top_accent_bar(slide, bar_color)
-    top = _title_card(slide, title, Inches(0.48), color=NAVY, size=22)
+    top = _title_card(slide, title, Inches(0.38), color=NAVY, size=22)
 
     img_path = ASSETS / image_rel
     w_in, h_in = _fit_image_inches(img_path, IMG_MAX_W, IMG_MAX_H)
     frame_w = w_in + IMG_FRAME_PAD * 2
     frame_h = h_in + IMG_FRAME_PAD * 2
     frame_left = (13.333 - frame_w) / 2
-    img_top = top + Inches(0.08)
+    img_top = top + Inches(0.04)
 
     frame = slide.shapes.add_shape(
         MSO_SHAPE.ROUNDED_RECTANGLE,
@@ -145,7 +145,7 @@ def add_image_slide(prs, title, image_rel, caption="", notes="", hands_on=False)
         )
         cp = cap.text_frame.paragraphs[0]
         cp.text = caption
-        _set_font(cp, size=11, color=GRAY)
+        _set_font(cp, size=12, color=GRAY)
 
     tag = "Diagram" if image_rel.startswith("diagrams/") else "Screenshot"
     _footer(slide, tag)

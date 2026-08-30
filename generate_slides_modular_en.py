@@ -17,7 +17,8 @@ from decks.ext_multiboard import slides as ext_multiboard_slides
 from decks.ext_vn import slides as ext_vn_slides
 from decks.ext_webservices import slides as ext_webservices_slides
 from decks.placeholders import lab_context, substitute_deck
-from decks.projection import sanitize_deck
+from decks.speaker_notes import enrich_deck
+from decks.projection import prepare_deck
 from decks.slot1 import slides as slot1_slides
 from decks.slot2 import slides as slot2_slides
 from decks.slot3 import slides as slot3_slides
@@ -59,17 +60,15 @@ LEGACY_FILENAMES = (
 
 
 def _tag_notes(notes: str, tag: str, mins: int) -> str:
-    return f"[{tag}] {mins} min\n{notes}" if notes else f"[{tag}] {mins} min"
+    # Presenter reads notes verbatim — no tier/timing header in the script.
+    return notes
 
 
 def _prepare(items, tag: str, mins: int = 4):
     out = []
     for item in items:
         kind = item[0]
-        if kind == "title":
-            out.append(item)
-            continue
-        notes_idx = {"section": 3, "theory": 4, "demo": 3, "content": 3, "hands_on": 3,
+        notes_idx = {"title": 4, "section": 3, "theory": 4, "demo": 3, "content": 3, "hands_on": 3,
                      "warn": 3, "code": 3, "image": 4}.get(kind, 3)
         notes = item[notes_idx] if len(item) > notes_idx else ""
         hand_mins = 6 if kind == "hands_on" else mins
@@ -88,7 +87,8 @@ def _save(name: str, items, tag: str, mins: int = 60):
     gse.ALLOWED_IMAGES = ALLOWED_IMAGES_EXT
     ctx = lab_context()
     resolved = substitute_deck(items, ctx)
-    resolved = sanitize_deck(resolved)
+    resolved = prepare_deck(resolved)
+    resolved = enrich_deck(resolved)
     prs = new_prs()
     apply_deck(prs, _prepare(resolved, tag, mins), add_image=add_image_slide)
     out = SLIDES_DIR / name
