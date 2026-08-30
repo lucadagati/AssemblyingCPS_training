@@ -5,7 +5,7 @@
 **Estensioni (6–9 h):** multi-board, Ch.5 VN, web services, Ch.19 FL, Ch.11 Blueprint, Ch.7 FaaS  
 **Docenti:** Francesco Longo (Slot 1–2 + estensioni infra), Giovanni Merlino (Slot 3 + FL/FaaS)
 
-Vedi anche: [INSTRUCTOR_PLAYBOOK.md](INSTRUCTOR_PLAYBOOK.md) · [HANDS_ON_COMMANDS.md](HANDS_ON_COMMANDS.md) (EN)
+Vedi anche: [HANDS_ON_COMMANDS.md](HANDS_ON_COMMANDS.md) (EN) · [docs/MODULES.md](docs/MODULES.md)
 
 ---
 

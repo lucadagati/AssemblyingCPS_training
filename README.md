@@ -53,7 +53,6 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 | Resource | Purpose |
 |----------|---------|
 | [`slides/*.pptx`](slides/) | Ready-to-project decks with UML sequence diagrams |
-| [`INSTRUCTOR_PLAYBOOK.md`](INSTRUCTOR_PLAYBOOK.md) | Timing (3h/6h/9h), co-teaching, RAM gates |
 | [`docs/MODULES.md`](docs/MODULES.md) | Module A–I map and prerequisites |
 | [`docs/DEMO_VERIFICATION.md`](docs/DEMO_VERIFICATION.md) | Verified demo matrix |
 | [`decks/*.py`](decks/) | Slide source — edit and regenerate |

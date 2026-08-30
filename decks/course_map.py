@@ -44,7 +44,7 @@ def slides() -> list:
             "Step 4: Use pre-built PPTX in slides/ or regenerate with scripts/generate_diagrams.py + generate_slides_modular_en.py.",
             "Step 5: Deliver modules A–I using Module*.pptx decks; re-run module validators after each lab block.",
             "Public repo: github.com/lucadagati/AssemblyingCPS_training",
-        ], "scripts/build-all.sh · INSTRUCTOR_PLAYBOOK.md"),
+        ], "scripts/build-all.sh · docs/MODULES.md"),
 
         ("image", "UML — End-to-end training workflow",
          "diagrams/seq-training-workflow.png",
