@@ -124,34 +124,84 @@ docker logs iotronic-wstun 2>&1 | tail -30
 
 ---
 
-## Extension — Module F (Web Services / WSTUN)
+## Extension — Module F (Web Services / WoT)
 
-Automated demo (creates service + enables tunnel + captures screenshots):
+### Horizon "Web Services" panel
+Horizon panel at `http://{{VM_IP}}/horizon/iot/` → **Web Services** shows all active WSTUN
+tunnels; select one to embed its Thing UI.
+
+### Demo A — WoT Fritzing Lab (interactive circuit)
+Multi-component circuit (4 LEDs, servo, motor, relay, LCD, button, live sensors).
 
 ```bash
 cd training
-.venv/bin/python experiments/webservices/setup-wstun-demo.py
-./validate-lab-wstun.sh
+bash experiments/webservices/run-wot-fritzing-demo.sh
+# Opens: http://{{VM_IP}}:<wstun_port>/
 ```
 
-Manual API flow:
+Embedded at: `Horizon → Web Services` (tunnel auto-selected as "wot-fritzing").
+
+### Demo B — Weather Station Dashboard
+Rich dark-theme dashboard with board sensors (temp, humidity, pressure, lux, UV, CO₂),
+LED control, trend chart, Messina Open Data (Open-Meteo), and interactive WoT API console.
 
 ```bash
-# 1) Create service — Porta MUST be 50000 (NOT 0 — Horizon form default!)
+bash experiments/webservices/run-weather-demo.sh
+# Cloud URL written to experiments/webservices/weather-state.json
+```
+
+Board HTTP endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Dashboard UI |
+| GET | `/sensors` | Board sensor data (JSON) |
+| GET | `/led/status` | LED state |
+| POST | `/led/toggle` | Toggle LED |
+| POST | `/led/on` | Turn ON |
+| POST | `/led/off` | Turn OFF |
+| GET | `/opendata` | Messina meteo (Open-Meteo) |
+| GET | `/history?n=30` | Rolling sensor history |
+
+### Demo C — SSH Remote Access via S4T
+
+All Lightning Rod containers run OpenSSH (credentials: **root / arancino**).
+SSH is registered as a catalog service and tunnelled through WSTUN for remote access.
+
+```bash
+bash experiments/webservices/run-ssh-service.sh
+# State written to experiments/webservices/ssh-state.json
+```
+
+Connect to a board:
+
+```bash
+ssh root@{{VM_IP}} -p <public_port>   # password: arancino
+# Ports are listed in ssh-state.json; example defaults:
+#   board-alpha   → -p 50078
+#   board-beta    → -p 50025
+#   board-gamma   → -p 50022
+#   board-delta   → -p 50094
+#   board-epsilon → -p 50026
+#   board-zeta    → -p 50016
+```
+
+### Manual WSTUN API flow
+
+```bash
+# 1) Create service (port must NOT be 0)
 curl -X POST http://{{VM_IP}}:8812/v1/services \
   -H "X-Auth-Token: $TOKEN" -H "Content-Type: application/json" \
-  -d '{"name":"lr-nginx-demo","port":50000,"protocol":"TCP"}'
+  -d '{"name":"my-service","port":8080,"protocol":"TCP"}'
 
-# 2) Enable on Active board → assigns cloud port on WSTUN
-curl -X POST http://{{VM_IP}}:8812/v1/boards/<BOARD_UUID>/services/lr-nginx-demo/action \
+# 2) Enable on board → assigns public cloud port
+curl -X POST http://{{VM_IP}}:8812/v1/boards/<BOARD_UUID>/services/my-service/action \
   -H "X-Auth-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"action":"ServiceEnable"}'
 
-# 3) Verify cloud endpoint (example port 50002)
-curl -v http://{{VM_IP}}:50002/
+# 3) Verify
+curl -v http://{{VM_IP}}:<cloud_port>/
 ```
-
-Horizon UI: `http://{{VM_IP}}/horizon/iot/services/` · `http://{{VM_IP}}/horizon/iot/webservices/`
 
 Logs:
 
@@ -164,21 +214,40 @@ docker logs lightning-rod 2>&1 | grep -i 'Cloud service'
 
 ## Advanced — Module G (Federated Learning Ch.19)
 
+### Horizon panel (recommended)
+
+```bash
+cd training
+./experiments/federated-learning/install-fl-on-boards.sh
+./experiments/federated-learning/setup-fl-horizon.sh
+./experiments/federated-learning/setup-fl-demo-plugins.sh   # optional demo-ready
+```
+
+Open `http://<IP>/horizon/iot/federated_learning/` → Lab parameters → Create plugin **fl-client** → Inject on alpha/beta/gamma → **Start Flower server** → **Start all clients** → Live topology.
+
+Validate:
+
+```bash
+cd training && ./validate-lab-fl.sh
+```
+
+Capture slide screenshots (Module G deck):
+
+```bash
+cd training && ./experiments/federated-learning/capture-fl-screenshots.sh
+```
+
+### CLI / local simulation (debug)
+
 ```bash
 cd training/repos/ch19
 pip install flwr torch pandas scikit-learn
 FL_ROUNDS=2 python3 server.py
-# separate terminal:
-cd training && ./validate-lab-fl.sh
 ```
 
-Or:
+Or: `training/experiments/federated-learning/fl-server-ctl.sh start`
 
-```bash
-training/experiments/federated-learning/start-server.sh
-```
-
-Deploy `client.py` from ch19 as async plugin on each of 3 boards with `heart_1.csv`, `heart_2.csv`, `heart_3.csv`.
+Single shared async plugin **`fl-client`** on each board; per-board JSON sets `csv_file` and `board_name` (`machine_1/2/3.csv` — CNC / conveyor / pump line).
 
 ---
 

@@ -105,33 +105,54 @@ def ensure_board(token: str, name: str, code: str) -> dict:
         raise
 
 
-def configure_lr(page, port: int, code: str) -> bool:
-    page.goto(f"http://{HOST}:{port}/", wait_until="networkidle", timeout=60000)
-    page.wait_for_timeout(500)
+def _lr_login(page, port: int) -> None:
+    page.goto(f"http://{HOST}:{port}/login", wait_until="networkidle", timeout=60000)
     if page.locator('input[name="username"]').count():
         page.fill('input[name="username"]', LR_USER)
         page.fill('input[name="password"]', LR_PASS)
         page.locator('input[type="submit"], button[type="submit"]').first.click()
         page.wait_for_timeout(2000)
+
+
+def lr_operative(port: int) -> bool:
+    """True if LR settings show board configured (post first-boot)."""
+    import subprocess
+    mapping = {1474: "lightning-rod", 1475: "lightning-rod-2", 1476: "lightning-rod-3"}
+    container = mapping.get(port)
+    if not container:
+        return False
+    try:
+        out = subprocess.check_output(
+            ["docker", "exec", container, "python3", "-c",
+             "import json; d=json.load(open('/etc/iotronic/settings.json')); "
+             "b=d.get('iotronic',{}).get('board',{}); "
+             "print(b.get('status',''), b.get('code',''))"],
+            stderr=subprocess.DEVNULL, text=True, timeout=10,
+        ).strip()
+        status, code = out.split(None, 1) if out else ("", "")
+        return status == "operative" and code and code != "<REGISTRATION-TOKEN>"
+    except Exception:
+        return False
+
+
+def configure_lr(page, port: int, code: str) -> bool:
+    if lr_operative(port):
+        print(f"  LR :{port} already operative — skip")
+        return True
+
+    _lr_login(page, port)
     page.goto(f"http://{HOST}:{port}/config", wait_until="networkidle", timeout=60000)
     page.wait_for_timeout(500)
-    # Skip if already configured (not first_boot)
-    if page.locator("text=first_boot").count() == 0 and page.locator("text=Not connected").count() == 0:
-        print(f"  LR :{port} may already be configured")
-    for sel in ['input[placeholder*="WAGENT"]', 'input[name*="url"]', 'input[type="text"]']:
-        loc = page.locator(sel)
-        if loc.count():
-            loc.first.fill(WAMP_URL)
-            break
-    else:
-        page.get_by_label("Registration Agent URL:").fill(WAMP_URL)
-    page.get_by_label("Registration Code:").fill(code)
-    page.locator('input[value="CONFIGURE"], button:has-text("CONFIGURE")').first.click()
-    page.wait_for_timeout(8000)
-    page.goto(f"http://{HOST}:{port}/status", wait_until="networkidle", timeout=30000)
-    text = page.content().lower()
-    ok = "connected" in text and "not connected" not in text
-    print(f"  LR :{port} status page — connected={'yes' if ok else 'pending'}")
+    if page.locator("#urlwagent").count() == 0:
+        return lr_operative(port)
+
+    page.fill("#urlwagent", WAMP_URL)
+    page.fill("#code", code)
+    page.locator('input[name="reg_btn"], input[value="CONFIGURE"]').first.click()
+    page.wait_for_timeout(12000)
+
+    ok = lr_operative(port)
+    print(f"  LR :{port} — operative={'yes' if ok else 'pending'}")
     return ok
 
 
@@ -164,7 +185,7 @@ def main() -> int:
                 ok_count += 1
         browser.close()
     print(f"Done — {ok_count}/{len(BOARDS)} LR instances report connected")
-    return 0 if ok_count >= 1 else 1
+    return 0 if ok_count == len(BOARDS) else 1
 
 
 if __name__ == "__main__":

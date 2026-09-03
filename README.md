@@ -98,7 +98,17 @@ See [slides/README.md](slides/README.md) for sequence diagram mapping.
 | `S4T_LAB_HOST` | Override IP for scripts |
 | `{{VM_IP}}` | Placeholder in slides and docs |
 | Horizon | `admin` / `s4t` |
-| Lightning-Rod | `me` / `arancino` |
+| Lightning-Rod SSH | `root` / `arancino` |
+
+### Module F — Web Services / WoT demos
+
+| Demo | Script | Description |
+|------|--------|-------------|
+| WoT Fritzing Lab | `experiments/webservices/run-wot-fritzing-demo.sh` | Interactive circuit (4 LEDs, servo, motor, relay, LCD, sensors) via WSTUN |
+| Weather Station | `experiments/webservices/run-weather-demo.sh` | Rich dashboard: board sensors, trend chart, LED ctrl, Messina Open-Meteo data |
+| SSH via S4T | `experiments/webservices/run-ssh-service.sh` | OpenSSH on all LR containers, forwarded via WSTUN (`root`/`arancino`) |
+
+Horizon **Web Services** panel: `http://{{VM_IP}}/horizon/iot/` → Web Services (lists tunnels, embeds Thing UI).
 
 ---
 

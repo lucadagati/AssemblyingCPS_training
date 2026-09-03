@@ -15,10 +15,10 @@ echo "=============================================="
 
 step() { echo ""; echo ">>> $*"; }
 
-step "1/6 Generate UML architecture + sequence diagrams"
+step "1/7 Generate UML architecture + sequence diagrams"
 python3 scripts/generate_diagrams.py 2>/dev/null || .venv/bin/python scripts/generate_diagrams.py
 
-step "2/6 Generate English PPTX from decks/*.py"
+step "2/7 Generate English PPTX from decks/*.py"
 python3 generate_slides_modular_en.py 2>/dev/null || .venv/bin/python generate_slides_modular_en.py
 
 CH13="${ROOT}/repos/ch13"
@@ -26,16 +26,16 @@ PATCH="${ROOT}/patches/docker-compose.lab.yml"
 
 if [[ ! -d "$CH13" ]]; then
   echo "WARN: repos/ch13 missing — run scripts/clone-repos.sh first"
-  echo "Skipping deploy steps 3–6"
+  echo "Skipping deploy steps 3–7"
   exit 0
 fi
 
-step "3/6 Clean lab deployment (docker compose down)"
+step "3/7 Clean lab deployment (docker compose down)"
 cd "$CH13"
 docker compose -f docker-compose.yml -f "$PATCH" down --remove-orphans 2>/dev/null || true
 cd "$ROOT"
 
-step "4/6 Start fresh lab deployment"
+step "4/7 Start fresh lab deployment"
 cd "$CH13"
 docker compose -f docker-compose.yml -f "$PATCH" up -d
 echo "Waiting for Conductor + Crossbar (up to 3 min)..."
@@ -48,15 +48,21 @@ for i in $(seq 1 36); do
 done
 cd "$ROOT"
 
-step "4b/6 Onboard boards (board-alpha/beta/gamma)"
+step "4b/7 Onboard boards (board-alpha/beta/gamma)"
 python3 scripts/onboard_multiboard.py 2>/dev/null || .venv/bin/python scripts/onboard_multiboard.py || echo "WARN: onboard manually in Horizon"
 
-step "5/6 Run post-demo scripts (weather + nginx WSTUN)"
+step "4c/7 Module G — FL Horizon panel + board dependencies"
+chmod +x experiments/federated-learning/*.sh 2>/dev/null || true
+./experiments/federated-learning/setup-fl-horizon.sh || echo "WARN: setup-fl-horizon skipped"
+./experiments/federated-learning/install-fl-on-boards.sh || echo "WARN: install-fl-on-boards skipped"
+./experiments/federated-learning/setup-fl-demo-plugins.sh || echo "WARN: setup-fl-demo-plugins skipped (need online boards)"
+
+step "5/7 Run post-demo scripts (weather + nginx WSTUN)"
 chmod +x experiments/webservices/run-weather-demo.sh validate/*.sh 2>/dev/null || true
 ./experiments/webservices/run-weather-demo.sh || echo "WARN: weather demo skipped"
 python3 experiments/webservices/setup-wstun-demo.py 2>/dev/null || .venv/bin/python experiments/webservices/setup-wstun-demo.py || echo "WARN: wstun demo skipped"
 
-step "6/6 Validate all modules"
+step "6/7 Validate all modules"
 ./validate/validate-all.sh "$S4T_LAB_HOST"
 
 echo ""

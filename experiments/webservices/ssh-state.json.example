@@ -1,0 +1,35 @@
+{
+  "host": "YOUR_VM_IP",
+  "service": "ssh-remote",
+  "local_port": 22,
+  "credentials": {
+    "user": "root",
+    "password": "arancino"
+  },
+  "boards": {
+    "board-alpha": {
+      "public_port": 50078,
+      "ssh_cmd": "ssh root@YOUR_VM_IP -p 50078"
+    },
+    "board-beta": {
+      "public_port": 50025,
+      "ssh_cmd": "ssh root@YOUR_VM_IP -p 50025"
+    },
+    "board-gamma": {
+      "public_port": 50022,
+      "ssh_cmd": "ssh root@YOUR_VM_IP -p 50022"
+    },
+    "board-delta": {
+      "public_port": 50094,
+      "ssh_cmd": "ssh root@YOUR_VM_IP -p 50094"
+    },
+    "board-epsilon": {
+      "public_port": 50026,
+      "ssh_cmd": "ssh root@YOUR_VM_IP -p 50026"
+    },
+    "board-zeta": {
+      "public_port": 50016,
+      "ssh_cmd": "ssh root@YOUR_VM_IP -p 50016"
+    }
+  }
+}

@@ -236,10 +236,44 @@ Horizon: `http://<IP>/horizon/iot/webservices/`
 
 ### Module G — Federated Learning (Ch.19)
 
-Richiede 3 board Active. Dataset: `heart_1.csv`, `heart_2.csv`, `heart_3.csv` in `training/repos/ch19`.
+Architettura come nel libro: **server Flower sulla VM cloud**, **3 board client** via plugin async Lightning-Rod (non una board come server).
+
+Richiede 3 board **online** (`board-alpha`, `board-beta`, `board-gamma`). Dataset predictive maintenance: `machine_1.csv`, `machine_2.csv`, `machine_3.csv` in `training/repos/ch19` (generati con `generate_pm_datasets.py`).
+
+#### Setup una tantum (shell sulla VM)
 
 ```bash
-cd training/repos/ch19 && FL_ROUNDS=2 python3 server.py
+cd training
+
+# Dipendenze flwr/torch + CSV sui 3 container Lightning-Rod
+./experiments/federated-learning/install-fl-on-boards.sh
+
+# Pannello Horizon nativo + servizio fl-control (:8091) + proxy live topology
+./experiments/federated-learning/setup-fl-horizon.sh
+
+# Opzionale — demo pronta: crea plugin condiviso fl-client e lo inietta sulle board online
+./experiments/federated-learning/setup-fl-demo-plugins.sh
+```
+
+#### Lab da Horizon (flusso consigliato)
+
+Apri **IoT → Federated Learning**: `http://<IP>/horizon/iot/federated_learning/`
+
+1. **Lab parameters** — imposta round, host/port server e dashboard → **Save** (persistono in `lab_config.json`)
+2. **Create / update FL client plugin** — registra il plugin condiviso **`fl-client`** (una tantum)
+3. Per ogni board online: **Inject** → avvia **`fl-client`** con JSON parametrico (`csv_file`, `board_name`; server/dashboard ereditati dai parametri lab)
+4. **Start Flower server** (o **Restart server** dopo cambio parametri)
+5. **Start all clients** sulle board online
+6. **Live topology** — iframe su `/horizon/fl-live/?embed=1`
+
+Porte lab: Flower gRPC **8087** (WSTUN usa :8080), dashboard **8090**, control API **8091**.
+
+CLI alternativa (debug): `./experiments/federated-learning/fl-server-ctl.sh start|stop|restart`
+
+Se Horizon mostra **"Unable to retrieve boards list"**:
+
+```bash
+./scripts/fix-iotronic-wampagents.sh
 ```
 
 ### Module H — Blueprint (Ch.11)
@@ -258,6 +292,7 @@ training/experiments/blueprint/k3s-prereq.sh   # RAM ≥ 8 GB
 3. **Cap. 13 compose:** immagine LR placeholder `@sha256:<resolved-image-digest>` — overlay usa `mdslab/lrod:compose`
 4. **Cap. 15:** `localhost:8086` non raggiunge InfluxDB da LR container — usare hostname `influxdb`
 5. **Cap. 19 riga 727:** rimanda a Cap. 12 per install S4T; procedura corretta è **Cap. 13**
+6. **Cap. 19 FL:** server Flower sulla VM host; lab usa **predictive maintenance** (vibrazione/temperatura/corrente, target guasto imminente) con plugin condiviso **`fl-client`**. Porta lab **8087**. Dataset: `machine_*.csv` (estensione lab; libro usa heart_*.csv)
 
 ---
 

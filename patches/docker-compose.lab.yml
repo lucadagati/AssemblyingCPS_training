@@ -9,6 +9,7 @@ services:
   ca_service:
     image: alpine:3.19
     container_name: ca_service
+    restart: unless-stopped
     networks:
       - s4t
     volumes:
@@ -44,6 +45,7 @@ services:
       - lr_confs:/etc/iotronic/
       - /var/run/docker.sock:/var/run/docker.sock
       - lr_data:/opt/data
+      - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
 
   lightning-rod-2:
     image: docker.io/mdslab/lrod:compose
@@ -61,6 +63,7 @@ services:
       - lr2_confs:/etc/iotronic/
       - /var/run/docker.sock:/var/run/docker.sock
       - lr2_data:/opt/data
+      - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
     stdin_open: true
     tty: true
     entrypoint: /bin/sh
@@ -83,6 +86,76 @@ services:
       - lr3_confs:/etc/iotronic/
       - /var/run/docker.sock:/var/run/docker.sock
       - lr3_data:/opt/data
+      - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/sh
+    command: >
+      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+
+  lightning-rod-4:
+    image: docker.io/mdslab/lrod:compose
+    container_name: lightning-rod-4
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - s4t
+    ports:
+      - "1477:1474"
+    volumes:
+      - lr4_var:/var/lib/iotronic
+      - lr4_le:/etc/letsencrypt/
+      - lr4_nginx:/etc/nginx
+      - lr4_confs:/etc/iotronic/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - lr4_data:/opt/data
+      - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/sh
+    command: >
+      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+
+  lightning-rod-5:
+    image: docker.io/mdslab/lrod:compose
+    container_name: lightning-rod-5
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - s4t
+    ports:
+      - "1478:1474"
+    volumes:
+      - lr5_var:/var/lib/iotronic
+      - lr5_le:/etc/letsencrypt/
+      - lr5_nginx:/etc/nginx
+      - lr5_confs:/etc/iotronic/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - lr5_data:/opt/data
+      - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/sh
+    command: >
+      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+
+  lightning-rod-6:
+    image: docker.io/mdslab/lrod:compose
+    container_name: lightning-rod-6
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - s4t
+    ports:
+      - "1479:1474"
+    volumes:
+      - lr6_var:/var/lib/iotronic
+      - lr6_le:/etc/letsencrypt/
+      - lr6_nginx:/etc/nginx
+      - lr6_confs:/etc/iotronic/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - lr6_data:/opt/data
+      - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
     stdin_open: true
     tty: true
     entrypoint: /bin/sh
@@ -104,8 +177,132 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb
 
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - s4t
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/horizon/metrics-live/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../../patches/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../patches/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  metrics-gateway:
+    image: python:3.11-slim
+    container_name: metrics-gateway
+    hostname: metrics-gateway
+    restart: unless-stopped
+    networks:
+      - s4t
+    ports:
+      - "8093:8093"
+    volumes:
+      - ../../experiments/metrics/metrics_server.py:/app/metrics_server.py:ro
+      - ../../experiments/metrics/registry.py:/app/registry.py:ro
+      - metrics_streams:/data
+    environment:
+      METRICS_HOST: "0.0.0.0"
+      METRICS_PORT: "8093"
+      INFLUX_URL: "http://influxdb:8086"
+      INFLUX_DB: "s4t_iot"
+      INFLUX_USER: admin
+      INFLUX_PASSWORD: admin
+      REGISTRY_PATH: "/data/metrics_streams.json"
+      METRICS_WRITE_URL: "http://metrics-gateway:8093/v1/metrics/write"
+    command: >
+      sh -c "pip install -q flask influxdb &&
+             python3 /app/metrics_server.py"
+
+  fl-control:
+    image: python:3.11-slim
+    container_name: fl-control
+    restart: unless-stopped
+    network_mode: host
+    working_dir: /training/experiments/federated-learning
+    volumes:
+      - ../..:/training:rw
+    environment:
+      FL_CONTROL_HOST: "0.0.0.0"
+      FL_CONTROL_PORT: "8091"
+      FL_PYTHON: "python3"
+    command: >
+      sh -c "python3 -c 'import flwr, flask, torch' 2>/dev/null ||
+             (pip install -q flask flwr pandas scikit-learn &&
+              pip install -q torch --index-url https://download.pytorch.org/whl/cpu) &&
+             python3 /training/experiments/federated-learning/control_server.py"
+
+  lr-log-proxy:
+    image: python:3.11-slim
+    container_name: lr-log-proxy
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../../experiments/multiboard/lr_log_proxy.py:/app/lr_log_proxy.py:ro
+    environment:
+      LR_LOG_PROXY_HOST: "0.0.0.0"
+      LR_LOG_PROXY_PORT: "8092"
+      DOCKER_BIN: "docker"
+    command: >
+      sh -c "command -v docker >/dev/null 2>&1 ||
+             (apt-get update -qq && apt-get install -qq -y docker.io >/dev/null) &&
+             pip install -q flask &&
+             python3 /app/lr_log_proxy.py"
+
+  iotronic-ui:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/bin/bash", "/opt/lab/iotronic-ui-lab-entrypoint.sh"]
+    environment:
+      FL_DASHBOARD_URL: "http://host.docker.internal:8090/"
+      FL_DASHBOARD_PROXY_PATH: "/horizon/fl-live/"
+      FL_CONTROL_URL: "http://host.docker.internal:8091"
+      FL_PORT: "8087"
+      FL_DOCKER_GW: "172.18.0.1"
+      FL_PLUGIN_SOURCE: "/opt/fl_lab/fl_client_plugin.py"
+      FL_LAB_CONFIG: "/opt/fl_lab_run/lab_config.json"
+      LR_LOG_PROXY_URL: "http://host.docker.internal:8092"
+      METRICS_SERVER_URL: "http://host.docker.internal:8093"
+      IOT_METRICS_PROXY_PATH: "/horizon/metrics-live/"
+    volumes:
+      - ../../patches/iotronic_ui_lab/iotronic_ui_lab:/usr/local/lib/python2.7/dist-packages/iotronic_ui_lab:ro
+      - ../../patches/iotronic_ui_fleets_lab/iot/fleets:/usr/local/lib/python2.7/dist-packages/iotronic_ui/iot/fleets:ro
+      - ../../patches/iotronic_ui_boards_lab/iot/boards:/usr/local/lib/python2.7/dist-packages/iotronic_ui/iot/boards:ro
+      - ../../patches/iotronic_ui_plugins_lab/iot/plugins:/usr/local/lib/python2.7/dist-packages/iotronic_ui/iot/plugins:ro
+      - ../../patches/iotronic_ui_plugins_lab/static/plugin_ide:/var/lib/openstack-dashboard/static/plugin_ide:ro
+      - ../../patches/horizon-enabled/_6060_iot_federated_learning_panel.py:/usr/share/openstack-dashboard/openstack_dashboard/enabled/_6060_iot_federated_learning_panel.py:ro
+      - ../../patches/horizon-enabled/_6070_iot_metrics_panel.py:/usr/share/openstack-dashboard/openstack_dashboard/enabled/_6070_iot_metrics_panel.py:ro
+      - ../../patches/horizon-enabled/_6080_iot_wot_panel.py:/usr/share/openstack-dashboard/openstack_dashboard/enabled/_6080_iot_wot_panel.py:ro
+      - ../../patches/horizon-enabled/_6040_hide_webservices.py:/usr/share/openstack-dashboard/openstack_dashboard/enabled/_6040_iot_webservices_panel.py:ro
+      - ../../patches/iotronic_ui_webservices_panel_stub.py:/usr/local/lib/python2.7/dist-packages/iotronic_ui/iot/webservices/panel.py:ro
+      - ../../patches/iotronic_ui_webservices_panel_stub.py:/opt/build/iotronic-ui/iotronic_ui/iot/webservices/panel.py:ro
+      - ../../patches/iotronic_ui_dashboard_lab.py:/opt/build/iotronic-ui/iotronic_ui/iot/dashboard.py:ro
+      - ../../patches/iotronic_ui_dashboard_lab.py:/usr/local/lib/python2.7/dist-packages/iotronic_ui/iot/dashboard.py:ro
+      - ../../patches/horizon-enabled/_6040_hide_webservices.py:/usr/local/lib/python2.7/dist-packages/iotronic_ui/enabled/_6040_iot_webservices_panel.py:ro
+      - ../../patches/horizon-enabled/_6040_hide_webservices.py:/opt/build/iotronic-ui/iotronic_ui/enabled/_6040_iot_webservices_panel.py:ro
+      - ../../patches/horizon-local-settings-en.py:/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/99-lab-en.py:ro
+      - ../../patches/lab_force_en.py:/usr/local/lib/python2.7/dist-packages/lab_force_en.py:ro
+      - ../../experiments/federated-learning/fl_client_plugin.py:/opt/fl_lab/fl_client_plugin.py:ro
+      - ../../experiments/federated-learning/.run:/opt/fl_lab_run:rw
+      - ../../patches/apache-fl-live-proxy.conf:/etc/apache2/conf-available/fl-live-proxy.conf:ro
+      - ../../patches/apache-metrics-live-proxy.conf:/etc/apache2/conf-available/metrics-live-proxy.conf:ro
+      - ../../patches/iotronic-ui-lab-entrypoint.sh:/opt/lab/iotronic-ui-lab-entrypoint.sh:ro
+
 volumes:
   influxdb_data:
+  grafana_data:
+  metrics_streams:
   lr_data:
   lr2_var:
   lr2_le:
@@ -117,3 +314,18 @@ volumes:
   lr3_nginx:
   lr3_confs:
   lr3_data:
+  lr4_var:
+  lr4_le:
+  lr4_nginx:
+  lr4_confs:
+  lr4_data:
+  lr5_var:
+  lr5_le:
+  lr5_nginx:
+  lr5_confs:
+  lr5_data:
+  lr6_var:
+  lr6_le:
+  lr6_nginx:
+  lr6_confs:
+  lr6_data:

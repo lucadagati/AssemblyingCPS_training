@@ -17,6 +17,7 @@ LR_PASS = os.environ.get("S4T_LR_PASS", "arancino")
 
 BAD_MARKERS = (
     "404", "not found", "pagina non trovata", "does not exist", "non esiste",
+    "server error", "internal server error",
 )
 
 
@@ -76,6 +77,82 @@ def lr_login(page, host: str):
         page.fill('input[name="password"]', LR_PASS)
         page.locator('input[type="submit"], button[type="submit"]').first.click()
         page.wait_for_timeout(3000)
+
+
+def capture_fl_panel(page, host: str):
+    """Module G — Federated Learning Horizon panel + live topology."""
+    import json
+    import urllib.error
+    import urllib.request
+
+    # Ensure dashboard is up for live topology iframe
+    try:
+        req = urllib.request.Request(
+            "http://127.0.0.1:8091/api/fl/start",
+            data=json.dumps({"fl_rounds": "2"}).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            print(f"FL server start: {resp.read().decode()[:120]}")
+    except urllib.error.URLError as exc:
+        print(f"WARN FL server start: {exc}")
+
+    horizon_login(page, host)
+    fl_path = "/horizon/iot/federated_learning/"
+    page.goto(f"http://{host}{fl_path}", wait_until="networkidle", timeout=90000)
+    page.wait_for_timeout(3000)
+    save(page, "chapter19/horizon-fl-panel.png", "federated")
+
+    # Lab parameters modal
+    for sel in [
+        'button[data-target="#fl-lab-params-modal"]',
+        'text=Lab parameters',
+    ]:
+        if page.locator(sel).count():
+            page.locator(sel).first.click()
+            break
+    page.wait_for_timeout(800)
+    modal = page.locator("#fl-lab-params-modal")
+    if modal.count() and modal.is_visible():
+        out = ASSETS / "chapter19/horizon-fl-lab-params.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        modal.screenshot(path=str(out))
+        print(f"OK chapter19/horizon-fl-lab-params.png")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(500)
+
+    # Expand FL client plugin section
+    heading = page.locator(".fl-collapsible-heading")
+    if heading.count():
+        heading.first.click()
+        page.wait_for_timeout(800)
+        plugin = page.locator("#fl-plugin-collapse")
+        if plugin.count():
+            out = ASSETS / "chapter19/horizon-fl-plugin-section.png"
+            plugin.screenshot(path=str(out))
+            print(f"OK chapter19/horizon-fl-plugin-section.png")
+
+    # Edge clients table (viewport crop)
+    clients = page.locator(".fl-client-table").first
+    if clients.count():
+        out = ASSETS / "chapter19/horizon-fl-edge-clients.png"
+        clients.screenshot(path=str(out))
+        print(f"OK chapter19/horizon-fl-edge-clients.png")
+
+    # Live topology iframe panel
+    live = page.locator(".fl-live-panel")
+    if live.count():
+        page.locator(".fl-live-panel").scroll_into_view_if_needed()
+        page.wait_for_timeout(4000)
+        out = ASSETS / "chapter19/horizon-fl-live-topology.png"
+        live.screenshot(path=str(out))
+        print(f"OK chapter19/horizon-fl-live-topology.png")
+
+    # Standalone embed (same origin proxy)
+    page.goto(f"http://{host}/horizon/fl-live/?embed=1", wait_until="networkidle", timeout=60000)
+    page.wait_for_timeout(3000)
+    save(page, "chapter19/fl-live-dashboard-embed.png", "federat")
 
 
 def capture_horizon(page, host: str):
@@ -265,14 +342,19 @@ def main():
     host = lab_host()
     ASSETS.mkdir(parents=True, exist_ok=True)
     purge_bad_assets()
+    fl_only = os.environ.get("FL_CAPTURE_ONLY", "").strip() in ("1", "true", "yes")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1400, "height": 900})
-        capture_horizon(page, host)
-        capture_lr(page, host)
-        capture_multiboard_lr(page, host)
-        capture_influx(page, host)
-        capture_post_demo(page, host)
+        if fl_only:
+            capture_fl_panel(page, host)
+        else:
+            capture_horizon(page, host)
+            capture_lr(page, host)
+            capture_multiboard_lr(page, host)
+            capture_influx(page, host)
+            capture_post_demo(page, host)
+            capture_fl_panel(page, host)
         browser.close()
     print("Dashboard capture complete — all pages validated.")
 
