@@ -50,9 +50,22 @@ def collect_wot_tunnels(request, boards):
             if public_port < 1:
                 continue
             name = svc.get("name") or ""
+            # Skip internal S4T system services
             if name in ("webservice", "webservice_ssl"):
                 continue
+            # Skip non-HTTP infrastructure services (SSH, raw TCP daemons, etc.)
+            _NON_HTTP = ("ssh-remote", "ssh", "sftp", "telnet", "mqtt", "amqp",
+                         "wamp", "crossbar")
+            if name.lower() in _NON_HTTP or name.lower().startswith("ssh"):
+                continue
             local_port = svc.get("port") or ""
+            # Additional guard: well-known non-HTTP ports
+            try:
+                _lp = int(local_port)
+            except (TypeError, ValueError):
+                _lp = 0
+            if _lp in (22, 23, 1883, 5671, 5672, 8883):
+                continue
             tunnels.append(
                 {
                     "board_name": board_name,
