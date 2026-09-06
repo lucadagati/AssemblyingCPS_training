@@ -242,9 +242,19 @@ class FleetLogsAjaxView(View):
             tail = 40
         tail = max(1, min(tail, 200))
         grep = request.GET.get("grep") or None
+        refresh = request.GET.get("refresh") in ("1", "true", "yes")
         boards = fleet_helpers.fleet_boards(request, fleet_id)
         names = [b.name for b in boards]
-        data = fleet_helpers.fetch_fleet_lr_logs(names, tail=tail, grep=grep)
+        uuids = [b.uuid for b in boards]
+        from iotronic_ui_lab.iot.lr_logs import helpers as lr_logs
+
+        data = lr_logs.fetch_lr_logs(
+            board_names=names,
+            board_uuids=uuids,
+            tail=tail,
+            grep=grep,
+            refresh=refresh,
+        )
         return HttpResponse(
             json.dumps({"boards": data, "tail": tail}),
             content_type="application/json",

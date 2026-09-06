@@ -26,23 +26,14 @@
   </div>
   <main class="layout layout-embed">
     <section class="viz-panel">
-      <div class="topology-zoom-shell" id="live-zoom-shell">
-        <div class="topology-zoom-controls" aria-label="Zoom controls">
-          <button type="button" id="zoom-in" title="Zoom in">+</button>
-          <button type="button" id="zoom-out" title="Zoom out">-</button>
-          <button type="button" id="zoom-reset" title="Reset zoom">&#8634;</button>
-        </div>
-        <div class="live-zoom-viewport" id="live-zoom-viewport">
-          <div class="topology-wrap">
-            {% include "topology.svg.inc" %}
-          </div>
-          <div class="legend">
-            <span><i class="dot broadcast"></i> Broadcast weights</span>
-            <span><i class="dot train"></i> Local training</span>
-            <span><i class="dot upload"></i> Upload &Delta;weights</span>
-            <span><i class="dot agg"></i> FedAvg on cloud</span>
-          </div>
-        </div>
+      <div class="topology-wrap">
+        {% include "topology.svg.inc" %}
+      </div>
+      <div class="legend">
+        <span><i class="dot broadcast"></i> Broadcast weights</span>
+        <span><i class="dot train"></i> Local training</span>
+        <span><i class="dot upload"></i> Upload &Delta;weights</span>
+        <span><i class="dot agg"></i> FedAvg on cloud</span>
       </div>
     </section>
     <aside class="side-panel">

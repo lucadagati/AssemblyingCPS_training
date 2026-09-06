@@ -5,6 +5,11 @@
 # Optional multi-board LR instances: lightning-rod (1474), lightning-rod-2 (1475), lightning-rod-3 (1476)
 
 services:
+
+  # Fix Python3 "except exception:" bug so online board delete works
+  iotronic-conductor:
+    volumes:
+      - ../../patches/iotronic_conductor_endpoints.py:/usr/local/lib/python3.6/dist-packages/iotronic/conductor/endpoints.py:ro
   # Fix: debian:buster apt repos EOL — use Alpine + openssl for CA generation
   ca_service:
     image: alpine:3.19
@@ -36,6 +41,8 @@ services:
         fi
         tail -f /dev/null
 
+  # FL lab boards (alpha/beta/gamma): durable /opt/fl datasets + shared pip target
+  # (/opt/fl-python). Entrypoint drops a .pth so PluginStart finds flwr after recreate.
   lightning-rod:
     image: docker.io/mdslab/lrod:compose
     volumes:
@@ -46,6 +53,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - lr_data:/opt/data
       - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
+      - ../../experiments/federated-learning/opt-fl:/opt/fl:ro
+      - lr_fl_python:/opt/fl-python
+    entrypoint: /bin/sh
+    command: >
+      -c "for d in /usr/local/lib/python3*/site-packages; do echo /opt/fl-python > \"$$d/z_fl_lab.pth\"; done;
+      sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
 
   lightning-rod-2:
     image: docker.io/mdslab/lrod:compose
@@ -64,11 +77,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - lr2_data:/opt/data
       - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
+      - ../../experiments/federated-learning/opt-fl:/opt/fl:ro
+      - lr_fl_python:/opt/fl-python
     stdin_open: true
     tty: true
     entrypoint: /bin/sh
     command: >
-      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+      -c "for d in /usr/local/lib/python3*/site-packages; do echo /opt/fl-python > \"$$d/z_fl_lab.pth\"; done;
+      sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
 
   lightning-rod-3:
     image: docker.io/mdslab/lrod:compose
@@ -87,11 +103,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - lr3_data:/opt/data
       - ../../experiments/metrics/s4t_metrics.py:/opt/lab/s4t_metrics.py:ro
+      - ../../experiments/federated-learning/opt-fl:/opt/fl:ro
+      - lr_fl_python:/opt/fl-python
     stdin_open: true
     tty: true
     entrypoint: /bin/sh
     command: >
-      -c "sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
+      -c "for d in /usr/local/lib/python3*/site-packages; do echo /opt/fl-python > \"$$d/z_fl_lab.pth\"; done;
+      sed -i \"s|self\\.wstun_ip *= .*|self.wstun_ip = \\\"iotronic-wstun\\\"|\" /usr/local/lib/python3*/site-packages/iotronic_lightningrod/modules/service_manager.py && exec startLR"
 
   lightning-rod-4:
     image: docker.io/mdslab/lrod:compose
@@ -254,6 +273,14 @@ services:
       LR_LOG_PROXY_HOST: "0.0.0.0"
       LR_LOG_PROXY_PORT: "8092"
       DOCKER_BIN: "docker"
+      # Host paths for docker -v (daemon runs on the VM, not inside this container)
+      TRAINING_ROOT: "/home/ubuntu/AssemblingSmartCPSs_editorial/training"
+      LR_METRICS_HOST: "/home/ubuntu/AssemblingSmartCPSs_editorial/training/experiments/metrics/s4t_metrics.py"
+      LR_OPT_FL_HOST: "/home/ubuntu/AssemblingSmartCPSs_editorial/training/experiments/federated-learning/opt-fl"
+      LR_FL_PYTHON_VOL: "ch13_lr_fl_python"
+      LR_NETWORK: "ch13_s4t"
+      LR_VOLUME_PREFIX: "ch13_lr"
+      LR_IMAGE: "docker.io/mdslab/lrod:compose"
     command: >
       sh -c "command -v docker >/dev/null 2>&1 ||
              (apt-get update -qq && apt-get install -qq -y docker.io >/dev/null) &&
@@ -297,12 +324,14 @@ services:
       - ../../experiments/federated-learning/.run:/opt/fl_lab_run:rw
       - ../../patches/apache-fl-live-proxy.conf:/etc/apache2/conf-available/fl-live-proxy.conf:ro
       - ../../patches/apache-metrics-live-proxy.conf:/etc/apache2/conf-available/metrics-live-proxy.conf:ro
+      - ../../patches/apache-wot-ws-proxy.conf:/etc/apache2/conf-available/wot-ws-proxy.conf:ro
       - ../../patches/iotronic-ui-lab-entrypoint.sh:/opt/lab/iotronic-ui-lab-entrypoint.sh:ro
 
 volumes:
   influxdb_data:
   grafana_data:
   metrics_streams:
+  lr_fl_python:
   lr_data:
   lr2_var:
   lr2_le:

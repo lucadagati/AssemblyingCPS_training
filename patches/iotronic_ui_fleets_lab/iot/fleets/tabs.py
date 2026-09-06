@@ -92,6 +92,11 @@ class LogsTab(tabs.Tab):
             "logs_ajax_url": reverse("horizon:iot:fleets:logs_ajax", args=(fleet_id,)),
             "log_tail": tail,
             "log_grep": grep,
+            "single_board": False,
+            "help_text": _(
+                "Last lines from each fleet member Lightning-Rod (docker logs). "
+                "Filtered for plugin activity."
+            ),
         }
 
 

@@ -29,6 +29,7 @@ def _cfg_from_request():
         data.update(request.args.to_dict())
     mapping = {
         "fl_rounds": data.get("fl_rounds") or data.get("rounds"),
+        "fl_scenario": data.get("fl_scenario") or data.get("scenario"),
         "fl_port": data.get("fl_port") or data.get("server_port"),
         "fl_host": data.get("fl_host") or data.get("server_host"),
         "fl_dashboard_port": data.get("fl_dashboard_port") or data.get("dashboard_port"),

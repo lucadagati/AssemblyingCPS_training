@@ -32,12 +32,39 @@ BOARD_ALIASES = {
     "gamma": "board-gamma",
 }
 
+SCENARIO_CLIENTS = {
+    "heart": {
+        "board-alpha": {"slug": "alpha", "line": "Clinical cohort A", "csv": "heart_1.csv"},
+        "board-beta": {"slug": "beta", "line": "Clinical cohort B", "csv": "heart_2.csv"},
+        "board-gamma": {"slug": "gamma", "line": "Clinical cohort C", "csv": "heart_3.csv"},
+    },
+    "pm": {
+        "board-alpha": {"slug": "alpha", "line": "CNC spindle", "csv": "machine_1.csv"},
+        "board-beta": {"slug": "beta", "line": "Conveyor motor", "csv": "machine_2.csv"},
+        "board-gamma": {"slug": "gamma", "line": "Pump line", "csv": "machine_3.csv"},
+    },
+}
+
+SCENARIO_UI = {
+    "heart": {
+        "pill": "Heart Ch.19",
+        "subtitle": "3 edge cohorts · federated learning",
+        "cloudSubtitle": "Global model · FedAvg",
+    },
+    "pm": {
+        "pill": "Pred. maintenance",
+        "subtitle": "3 production lines · federated learning",
+        "cloudSubtitle": "Global model · FedAvg",
+    },
+}
+
 
 def _empty_state() -> dict[str, Any]:
     return {
         "phase": "idle",
         "round": 0,
         "total_rounds": int(__import__("os").environ.get("FL_ROUNDS", "2")),
+        "fl_scenario": "heart",
         "accuracy": [],
         "loss": [],
         "clients": {
@@ -78,11 +105,13 @@ def _save(state: dict[str, Any]) -> None:
     STATE_PATH.write_text(json.dumps(safe, indent=0, allow_nan=False))
 
 
-def reset(total_rounds: int | None = None) -> None:
+def reset(total_rounds: int | None = None, scenario: str = "heart") -> None:
     with _lock:
         state = _empty_state()
         if total_rounds is not None:
             state["total_rounds"] = total_rounds
+        if scenario in SCENARIO_CLIENTS:
+            state["fl_scenario"] = scenario
         _save(state)
 
 
@@ -107,6 +136,8 @@ def emit(kind: str, message: str = "", **extra: Any) -> None:
             state["phase"] = extra["phase"]
         if "round" in extra:
             state["round"] = extra["round"]
+        if extra.get("fl_scenario") in SCENARIO_CLIENTS:
+            state["fl_scenario"] = extra["fl_scenario"]
         client = extra.get("client")
         if client:
             cid = _normalize_client(str(client))
@@ -116,6 +147,10 @@ def emit(kind: str, message: str = "", **extra: Any) -> None:
                     c["status"] = extra["client_status"]
                 if extra.get("samples") is not None:
                     c["samples"] = extra["samples"]
+                if extra.get("csv_file"):
+                    c["csv_file"] = extra["csv_file"]
+                if extra.get("fl_scenario") in SCENARIO_CLIENTS:
+                    c["fl_scenario"] = extra["fl_scenario"]
                 if message:
                     c["last_action"] = message
         if kind == "metrics" and "accuracy" in extra:
@@ -130,6 +165,27 @@ def emit(kind: str, message: str = "", **extra: Any) -> None:
         _save(state)
 
 
+def _infer_scenario(state: dict[str, Any]) -> str:
+    """Derive active lab example from client CSV paths when state is stale."""
+    for client in (state.get("clients") or {}).values():
+        csv_file = str(client.get("csv_file") or "")
+        if "machine_" in csv_file:
+            return "pm"
+        if "heart_" in csv_file:
+            return "heart"
+    scenario = state.get("fl_scenario", "heart")
+    return scenario if scenario in SCENARIO_UI else "heart"
+
+
 def snapshot() -> dict[str, Any]:
     with _lock:
-        return _json_safe(_load())
+        state = _json_safe(_load())
+        scenario = _infer_scenario(state)
+        state["fl_scenario"] = scenario
+        state["scenario_clients"] = SCENARIO_CLIENTS.get(
+            scenario, SCENARIO_CLIENTS["heart"]
+        )
+        ui = dict(SCENARIO_UI.get(scenario, SCENARIO_UI["heart"]))
+        ui["clients"] = state["scenario_clients"]
+        state["scenario_ui"] = ui
+        return state

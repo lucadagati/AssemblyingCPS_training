@@ -18,6 +18,11 @@ except ImportError:
     import urllib.request as urllib2
     from urllib.parse import quote as urlquote
 
+try:
+    from iotronic_ui_lab.iot.iot_metrics import metrics_helpers
+except ImportError:
+    metrics_helpers = None
+
 LOG = logging.getLogger(__name__)
 
 LR_LOG_PROXY_URL = os.environ.get(
@@ -122,7 +127,31 @@ def inject_plugin_on_fleet(request, fleet_id, plugin_id, onboot=False):
     return _flash_fleet_results(request, _("Inject"), ok, failed)
 
 
-def start_plugin_on_fleet(request, fleet_id, plugin_id, parameters=None):
+def _provision_metrics_for_board(board, plugin_id, plugin_name, params):
+    if metrics_helpers is None:
+        return params
+    payload = {
+        "board_uuid": board.uuid,
+        "board_name": board.name,
+        "plugin_uuid": plugin_id,
+        "plugin_name": plugin_name or "",
+        "measurement": "environmental_data",
+        "field_schema": ["Temperature", "Humidity", "PM10", "PM25"],
+        "fleet": getattr(board, "fleet", "") or "",
+    }
+    result = metrics_helpers.provision_stream(payload)
+    merged = dict(params or {})
+    merged.update(
+        {
+            "metrics_url": result.get("metrics_url"),
+            "metrics_token": result.get("metrics_token"),
+            "metrics_stream": result.get("metrics_stream"),
+        }
+    )
+    return merged
+
+
+def start_plugin_on_fleet(request, fleet_id, plugin_id, parameters=None, enable_metrics=False, plugin_name=""):
     boards = fleet_boards(request, fleet_id)
     if not boards:
         messages.warning(request, _("Fleet has no member boards."))
@@ -131,8 +160,13 @@ def start_plugin_on_fleet(request, fleet_id, plugin_id, parameters=None):
     ok, failed = [], []
     for board in boards:
         try:
+            start_params = dict(params)
+            if enable_metrics:
+                start_params = _provision_metrics_for_board(
+                    board, plugin_id, plugin_name, start_params
+                )
             iotronic.plugin_action(
-                request, board.uuid, plugin_id, "PluginStart", params
+                request, board.uuid, plugin_id, "PluginStart", start_params
             )
             ok.append(board.name)
         except Exception as exc:
@@ -239,17 +273,7 @@ def fetch_fleet_lr_logs(board_names, tail=40, grep=None):
 
 def fleet_lr_log_panels(request, fleet_id, tail=40, grep=None):
     """Build per-board log panels for fleet member boards."""
+    from iotronic_ui_lab.iot.lr_logs import helpers as lr_logs
+
     boards = fleet_boards(request, fleet_id)
-    names = [b.name for b in boards]
-    raw = fetch_fleet_lr_logs(names, tail=tail, grep=grep)
-    panels = []
-    for board in boards:
-        entry = raw.get(board.name, {})
-        lines = entry.get("lines") or ["[empty]"]
-        text = "\n".join(lines)
-        panels.append({
-            "board_name": board.name,
-            "container": entry.get("container") or lr_container_for_board(board.name),
-            "text": text,
-        })
-    return panels
+    return lr_logs.fleet_log_panels(boards, tail=tail, grep=grep)

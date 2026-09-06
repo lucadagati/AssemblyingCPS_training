@@ -145,13 +145,13 @@ class IndexView(TemplateView):
                     fl_helpers.restart_all_clients(request, request.session, cfg)
                     messages.info(
                         request,
-                        _("Parameters saved — Flower server restarted with new settings."),
+                        _("Parameters saved - Flower server restarted with new settings."),
                     )
                 else:
                     fl_helpers.save_assignments(request.session, request.POST, specs)
                     messages.success(
                         request,
-                        _("Parameters saved — use Start server to apply."),
+                        _("Parameters saved - use Start server to apply."),
                     )
 
             elif action == "run_lab_plugin":
@@ -178,7 +178,7 @@ class IndexView(TemplateView):
                 fl_helpers.restart_all_clients(request, request.session, cfg)
                 messages.info(
                     request,
-                    _("Flower server and edge clients started — live topology updates during FL rounds."),
+                    _("Flower server and edge clients started - live topology updates during FL rounds."),
                 )
 
             elif action == "stop_fl_server":
@@ -203,7 +203,7 @@ class IndexView(TemplateView):
                 fl_helpers.restart_all_clients(request, request.session, cfg)
                 messages.info(
                     request,
-                    _("Server restarted and edge clients reconnected — watch live topology."),
+                    _("Server restarted and edge clients reconnected - watch live topology."),
                 )
 
             elif action == "start_all_clients":
@@ -222,7 +222,7 @@ class IndexView(TemplateView):
                 if not st.get("running"):
                     messages.warning(
                         request,
-                        _("Flower server is not running — use Start server first."),
+                        _("Flower server is not running - use Start server first."),
                     )
                 else:
                     fl_helpers.start_all_clients(request, request.session)

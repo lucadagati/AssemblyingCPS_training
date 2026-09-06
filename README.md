@@ -6,6 +6,8 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 
 **417 slides** across 10 English PPTX decks (Modules A–I). Slide URLs use placeholder `{{VM_IP}}` — replace with your lab host IP before presenting.
 
+**Recent lab ops:** see [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) (Tailscale dual ingress, `/lab-ws/` demos, external boards, SWC2026 scripts).
+
 ---
 
 ## For students (reproducibility)
@@ -14,7 +16,7 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
    ```bash
    git clone https://github.com/lucadagati/AssemblyingCPS_training.git
    cd AssemblyingCPS_training
-   cp vm-ip.txt.example vm-ip.txt    # edit: your machine IP
+   cp vm-ip.txt.example vm-ip.txt    # edit: your machine IP (LAN or Tailscale)
    export S4T_LAB_HOST=$(cat vm-ip.txt)
    ```
 
@@ -34,9 +36,11 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 4. **Follow the lab** using:
    - [`HANDS_ON_COMMANDS.md`](HANDS_ON_COMMANDS.md) — copy-paste commands (EN)
    - [`GUIDA_SETUP_CORSISTI.md`](GUIDA_SETUP_CORSISTI.md) — setup guide (IT)
-   - [`PORT_FORWARDING.md`](PORT_FORWARDING.md) — browser URLs
-   - [`docs/BOOK_DIFFERENCES.md`](docs/BOOK_DIFFERENCES.md) — book vs lab (ports, Worker class, InfluxDB host)
-   - `slides/Module*.pptx` — presentation decks (replace `{{VM_IP}}` in Find/Replace if needed)
+   - [`PORT_FORWARDING.md`](PORT_FORWARDING.md) — browser URLs + `/lab-ws/` demos
+   - [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) — multi-ingress & external boards
+   - [`docs/BOOK_DIFFERENCES.md`](docs/BOOK_DIFFERENCES.md) — book vs lab
+   - [`swc2026/`](swc2026/) — conference helpers (manual LR create/destroy)
+   - `slides/Module*.pptx` — decks (Find/Replace `{{VM_IP}}` if needed)
 
 ### Core path deliverables (3 h)
 
@@ -45,6 +49,15 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 | A | Screenshot: board **Active** in Horizon + `curl` HTTP 200 on `:8812` |
 | B | HelloName Plugin Call output + optional Docker alpine JSON |
 | C | InfluxDB rows in `environmental_data` measurement |
+
+### Demo URLs (any ingress IP)
+
+Prefer path proxy (works for every Tailscale/LAN address of the VM):
+
+```text
+http://{{VM_IP}}/lab-ws/50006/   # wot-fritzing (example port)
+http://{{VM_IP}}/horizon         # Horizon
+```
 
 ---
 
@@ -55,8 +68,11 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 | [`slides/*.pptx`](slides/) | Ready-to-project decks with UML sequence diagrams |
 | [`docs/MODULES.md`](docs/MODULES.md) | Module A–I map and prerequisites |
 | [`docs/DEMO_VERIFICATION.md`](docs/DEMO_VERIFICATION.md) | Verified demo matrix |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Lab overlay history |
+| [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) | Tailscale / LAN / external board |
 | [`decks/*.py`](decks/) | Slide source — edit and regenerate |
 | [`assets/`](assets/) | Horizon/LR screenshots + architecture PNGs |
+| [`swc2026/`](swc2026/) | Live-session board create / port map |
 
 ### Regenerate slides after editing `decks/*.py`
 
@@ -98,17 +114,8 @@ See [slides/README.md](slides/README.md) for sequence diagram mapping.
 | `S4T_LAB_HOST` | Override IP for scripts |
 | `{{VM_IP}}` | Placeholder in slides and docs |
 | Horizon | `admin` / `s4t` |
-| Lightning-Rod SSH | `root` / `arancino` |
-
-### Module F — Web Services / WoT demos
-
-| Demo | Script | Description |
-|------|--------|-------------|
-| WoT Fritzing Lab | `experiments/webservices/run-wot-fritzing-demo.sh` | Interactive circuit (4 LEDs, servo, motor, relay, LCD, sensors) via WSTUN |
-| Weather Station | `experiments/webservices/run-weather-demo.sh` | Rich dashboard: board sensors, trend chart, LED ctrl, Messina Open-Meteo data |
-| SSH via S4T | `experiments/webservices/run-ssh-service.sh` | OpenSSH on all LR containers, forwarded via WSTUN (`root`/`arancino`) |
-
-Horizon **Web Services** panel: `http://{{VM_IP}}/horizon/iot/` → Web Services (lists tunnels, embeds Thing UI).
+| Lightning-Rod | `me` / `arancino` |
+| LR container SSH (SWC scripts) | `root` / `arancino` (inside container only; no host port) |
 
 ---
 

@@ -1,4 +1,4 @@
-# Lab extension - Federated Learning panel in IoT sidebar (Module G).
+# Lab extension - Federated Learning panel in IoT sidebar.
 
 PANEL = 'federated_learning'
 PANEL_DASHBOARD = 'iot'

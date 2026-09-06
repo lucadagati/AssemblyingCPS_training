@@ -1,7 +1,0 @@
-{
-  "dashboard_host": "172.18.0.1",
-  "dashboard_port": "8090",
-  "fl_rounds": "2",
-  "server_host": "172.18.0.1",
-  "server_port": "8087"
-}

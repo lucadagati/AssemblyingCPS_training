@@ -1,3 +1,4 @@
 # Copy to vm-ip.txt and set your lab host IP (one line, no comments):
-# 192.168.1.100
+# LAN example:          192.168.100.11
+# Tailscale example:    100.74.114.23
 {{VM_IP}}

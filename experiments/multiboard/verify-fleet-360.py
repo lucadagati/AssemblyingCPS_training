@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -285,20 +286,37 @@ def run_fleet_op(token: str, fleet_id: str, plugin_id: str, op: str, params: dic
 def horizon_smoke(fleet_id: str) -> None:
     cookie = "/tmp/fleet360-cookie.txt"
     Path(cookie).unlink(missing_ok=True)
+    login_html = subprocess.check_output(
+        ["curl", "-s", "-c", cookie, f"http://{HOST}/horizon/auth/login/"],
+        text=True,
+    )
+    csrf_match = re.search(
+        r"name=['\"]csrfmiddlewaretoken['\"]\s+value=['\"]([^'\"]+)['\"]",
+        login_html,
+    )
+    if not csrf_match:
+        bad("Horizon login page missing CSRF token")
+        return
+    csrf = csrf_match.group(1)
     subprocess.run(
         [
             "curl", "-sf", "-c", cookie, "-b", cookie, "-L",
-            "-d", "username=admin&password=s4t",
+            "-d", f"csrfmiddlewaretoken={csrf}&username=admin&password=s4t",
+            "-e", f"http://{HOST}/horizon/auth/login/",
             f"http://{HOST}/horizon/auth/login/?next=/horizon/iot/fleets/",
         ],
         check=False,
         capture_output=True,
     )
     paths = [
-        "/horizon/iot/fleets/",
-        f"/horizon/iot/fleets/{fleet_id}/detail/",
+        ("/horizon/iot/fleets/", "Fleets"),
+        (f"/horizon/iot/fleets/{fleet_id}/detail/", "Fleet detail"),
     ]
-    for path in paths:
+    for path, label in paths:
+        body = subprocess.check_output(
+            ["curl", "-s", "-L", "-b", cookie, f"http://{HOST}{path}"],
+            text=True,
+        )
         code = subprocess.check_output(
             [
                 "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
@@ -306,10 +324,96 @@ def horizon_smoke(fleet_id: str) -> None:
             ],
             text=True,
         ).strip()
-        if code == "200":
-            ok(f"Horizon GET {path} HTTP 200")
-        else:
+        if code != "200":
             bad(f"Horizon GET {path} HTTP {code}")
+            continue
+        if "Login - OpenStack Dashboard" in body:
+            bad(f"Horizon {label} returned login page (session auth failed)")
+        elif label == "Fleets" and "Fleets" not in body:
+            bad(f"Horizon {label} page missing expected content")
+        else:
+            ok(f"Horizon GET {path} HTTP 200")
+
+
+def lr_log_proxy_smoke(board_names: list[str]) -> None:
+    try:
+        health = subprocess.check_output(
+            ["curl", "-sf", "http://127.0.0.1:8092/health"],
+            text=True,
+            timeout=5,
+        )
+        if json.loads(health).get("ok"):
+            ok("lr-log-proxy /health")
+        else:
+            bad(f"lr-log-proxy /health unexpected: {health[:80]}")
+    except Exception as exc:
+        bad(f"lr-log-proxy unreachable ({exc})")
+        return
+
+    try:
+        raw = subprocess.check_output(
+            ["curl", "-sf", "http://127.0.0.1:8092/api/lr-map?refresh=1"],
+            text=True,
+            timeout=15,
+        )
+        data = json.loads(raw)
+        mapped = data.get("by_name") or {}
+        if len(mapped) >= len(board_names):
+            ok(f"lr-log-proxy maps {len(mapped)} LR containers")
+        else:
+            bad(f"lr-log-proxy maps {len(mapped)}/{len(board_names)} boards")
+        for name in board_names:
+            qs = f"boards={name}&tail=3&refresh=1"
+            log_raw = subprocess.check_output(
+                ["curl", "-sf", f"http://127.0.0.1:8092/api/lr-logs?{qs}"],
+                text=True,
+                timeout=15,
+            )
+            entry = json.loads(log_raw).get("boards", {}).get(name, {})
+            if entry.get("container"):
+                ok(f"lr-logs {name} -> {entry['container']}")
+            else:
+                bad(f"lr-logs {name} has no container mapping")
+    except Exception as exc:
+        bad(f"lr-log-proxy map/logs ({exc})")
+
+
+def boards_panel_smoke() -> None:
+    try:
+        out = subprocess.check_output(
+            [
+                "docker", "exec", "iotronic-ui", "bash", "-c",
+                "cd /usr/share/openstack-dashboard && python2.7 manage.py shell -c "
+                "\"from iotronic_ui.iot.boards import tabs; "
+                "print ','.join(t.slug for t in tabs.BoardDetailTabs.tabs)\"",
+            ],
+            text=True,
+            timeout=30,
+        ).strip()
+        if "logs" in out.split(","):
+            ok(f"Boards detail tabs: {out}")
+        else:
+            bad(f"Boards detail tabs missing LR logs: {out}")
+    except Exception as exc:
+        bad(f"boards patch import: {exc}")
+
+    try:
+        out = subprocess.check_output(
+            [
+                "docker", "exec", "iotronic-ui", "python2", "-c",
+                "from iotronic_ui_lab.iot.lr_logs import helpers as h; "
+                "p=h.board_log_panel('board-alpha','',tail=3); "
+                "print p.get('container') or 'none'",
+            ],
+            text=True,
+            timeout=20,
+        ).strip()
+        if out and out != "none":
+            ok(f"Boards LR log helper -> {out}")
+        else:
+            bad("Boards LR log helper returned no container")
+    except Exception as exc:
+        bad(f"boards LR log helper: {exc}")
 
 
 def main() -> int:
@@ -461,6 +565,33 @@ def main() -> int:
             bad(f"Fleets table row actions: {out}")
     except Exception as exc:
         bad(f"fleet patch import: {exc}")
+
+    print("\n[12] LR log proxy (Boards + Fleets logs)")
+    lr_names = sorted({b[0] for b in VERIFY_BOARDS} | {"board-alpha", "board-beta", "board-gamma"})
+    lr_log_proxy_smoke(lr_names)
+
+    print("\n[13] Boards panel LR logs tab")
+    boards_panel_smoke()
+
+    print("\n[14] Core lab services")
+    for svc in ("lr-log-proxy", "fl-control", "iotronic-ui", "iotronic-conductor"):
+        st = subprocess.check_output(
+            ["docker", "inspect", "-f", "{{.State.Status}}", svc],
+            text=True,
+        ).strip()
+        if st == "running":
+            ok(f"docker {svc} running")
+        else:
+            bad(f"docker {svc} status={st}")
+    try:
+        subprocess.check_call(
+            ["curl", "-sf", "http://127.0.0.1:8091/health"],
+            stdout=subprocess.DEVNULL,
+            timeout=5,
+        )
+        ok("fl-control /health")
+    except Exception as exc:
+        bad(f"fl-control health ({exc})")
 
     print(f"\n=== Results: {PASS} OK | {FAIL} FAIL ===")
     return 0 if FAIL == 0 else 1

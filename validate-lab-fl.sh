@@ -27,7 +27,7 @@ echo "=== Module G: Federated Learning (host ${HOST}) ==="
 [[ -f "$CH19/client.py" ]] && ok "client.py present" || fail_msg "client.py missing"
 [[ -f "${FL_EXP}/fl_client_plugin.py" ]] && ok "fl_client_plugin.py (LR plugin)" || fail_msg "fl_client_plugin.py missing"
 
-for f in machine_1.csv machine_2.csv machine_3.csv data_test.csv; do
+for f in machine_1.csv machine_2.csv machine_3.csv heart_1.csv heart_2.csv heart_3.csv data_test_heart.csv data_test_pm.csv; do
   [[ -f "$CH19/$f" ]] && ok "Dataset $f" || warn_msg "Missing $f — run generate_pm_datasets.py"
 done
 
@@ -54,6 +54,11 @@ grep -q 'fl-control:' "${PATCHES}/docker-compose.lab.yml" 2>/dev/null \
 
 for lr in lightning-rod lightning-rod-2 lightning-rod-3; do
   if docker ps --format '{{.Names}}' | grep -qx "$lr" 2>/dev/null; then
+    if docker exec "$lr" test -f /opt/fl/heart_1.csv 2>/dev/null; then
+      ok "/opt/fl datasets on $lr"
+    else
+      warn_msg "/opt/fl missing on $lr — remount compose + run install-fl-on-boards.sh"
+    fi
     if docker exec "$lr" python3 -c "import flwr" 2>/dev/null; then
       ok "flwr on $lr"
     else

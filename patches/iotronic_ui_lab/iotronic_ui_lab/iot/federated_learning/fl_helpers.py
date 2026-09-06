@@ -288,7 +288,7 @@ def _workflow_step(plugins_exist, all_injected, any_started):
 
 
 def get_client_specs(request, session=None):
-    """One FL client row per Cap.19 lab board (alpha, beta, gamma)."""
+    """One FL client row per lab board (alpha, beta, gamma)."""
     session = session or request.session
     global_cfg = read_global_config(session)
     boards = _boards_list(request)
@@ -393,7 +393,7 @@ def collect_active_scenarios(request, session, form_data=None):
 
 
 def validate_lab_scenarios(request, session, form_data=None):
-    """Single active scenario — driven by top-level plugin pick when present."""
+    """Single active scenario - driven by top-level plugin pick when present."""
     if form_data is not None:
         lab_plugin = form_data.get("fl_lab_plugin", "").strip()
         detected = scenario_from_plugin_name(lab_plugin)
@@ -445,16 +445,24 @@ def run_lab_scenario(request, session, form_data, server_running):
         fl_server_ctl.restart_server(request, cfg, quiet=True)
     else:
         fl_server_ctl.start_server(request, cfg, quiet=True)
+    expected = len([s for s in specs if s.get("board_name") in LAB_BOARD_NAMES])
     started = restart_all_clients(request, session, cfg, quiet=True)
-    if started < len([s for s in specs if s.get("board_name") in LAB_BOARD_NAMES]):
-        raise RuntimeError(
-            "Only {0} edge client(s) started - inject plugins and check boards online.".format(
-                started
-            )
-        )
 
     label = scenario_label(active)
     plugin = form_data.get("fl_lab_plugin", "").strip()
+    if started == 0:
+        raise RuntimeError(
+            "No edge clients started - inject plugins and check boards online."
+        )
+    if started < expected:
+        messages.warning(
+            request,
+            _(
+                "Server ready ({0}, {1}) but only {2}/{3} edge client(s) started - "
+                "inject plugins and check boards online."
+            ).format(label, plugin or active, started, expected),
+        )
+        return cfg
     if server_running:
         messages.success(
             request,

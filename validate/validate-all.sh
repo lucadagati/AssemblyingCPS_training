@@ -34,6 +34,7 @@ run "Module E — Virtual Networking (ch05)" "${SCRIPT_DIR}/validate-lab-vn.sh" 
 run "Module F — WSTUN / Web Services" "${SCRIPT_DIR}/validate-lab-wstun.sh" || FAIL=$((FAIL+1))
 run "Module G — Federated Learning (ch19)" "${SCRIPT_DIR}/validate-lab-fl.sh" || FAIL=$((FAIL+1))
 run "Module H — Blueprint / K3s (ch11)" "${VALIDATE}/validate-demo-ch11.sh" || FAIL=$((FAIL+1))
+run "Module I — IoT Metrics" "${SCRIPT_DIR}/validate-lab-metrics.sh" || FAIL=$((FAIL+1))
 
 echo ""
 echo "=============================================="

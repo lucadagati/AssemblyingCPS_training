@@ -1,7 +1,12 @@
-.venv/
-__pycache__/
-*.pyc
-vm-ip.txt
-experiments/webservices/wstun-state.json
+*.env
+experiments/federated-learning/.run/
+experiments/webservices/*-state.json
 experiments/webservices/weather-state.json
+experiments/webservices/wstun-state.json
+*.pyc
+__pycache__/
 repos/
+swc2026/.last-manual-lr.env
+.venv/
+vm-ip.txt
+!vm-ip.txt.example

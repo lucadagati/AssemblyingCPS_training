@@ -80,6 +80,8 @@ docker compose -f docker-compose.yml -f ../../patches/docker-compose.lab.yml ps
 | Lightning-Rod UI | `http://{{VM_IP}}:1474` | me | arancino |
 | IoTronic API | `http://{{VM_IP}}:8812` | — | — |
 | InfluxDB | `http://{{VM_IP}}:8086` | admin | admin |
+| Grafana (lab) | `http://{{VM_IP}}:3000` | admin | admin |
+| Metrics gateway | `http://{{VM_IP}}:8093` | — | Bearer token (auto) |
 
 ### Onboarding virtual board
 
@@ -88,6 +90,8 @@ docker compose -f docker-compose.yml -f ../../patches/docker-compose.lab.yml ps
 3. WAMP endpoint: `wss://crossbar:8181`
 4. Incollare board code → Submit
 5. Verificare stato **Active** in Horizon
+
+**Scorciatoia lab:** IoT → Boards → **Create LR Container** crea board + container Lightning-Rod (volumi e porta da 1480) e registra su Crossbar in automatico. Non tocca alpha–zeta. Login LR: `me` / `arancino`.
 
 ### Porte esposte
 
@@ -100,8 +104,13 @@ docker compose -f docker-compose.yml -f ../../patches/docker-compose.lab.yml ps
 | 5000 | Keystone |
 | 8080 | WSTUN |
 | 8086 | InfluxDB (overlay lab) |
+| 8093 | Metrics gateway (overlay lab) |
+| 3000 | Grafana (overlay lab) |
 | 8181 | Crossbar WAMP |
 | 8812 | IoTronic Conductor API |
+| 80 (+ `/lab-ws/<port>/`) | Horizon + proxy demo WoT/WSTUN (indipendente dall'IP Tailscale) |
+
+Vedi anche: [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) · [`docs/CHANGELOG.md`](docs/CHANGELOG.md) · [`swc2026/README.md`](swc2026/README.md)
 
 ---
 
@@ -152,6 +161,17 @@ Codice plugin: `training/repos/ch14/docker_lifecycle_plugin.py` o listing Cap. 1
 
 ## D. Slot 3 — Environmental publisher (Cap. 15)
 
+### Stack metriche cloud (lab)
+
+Con l'overlay lab, i plugin **non scrivono più direttamente** su InfluxDB con credenziali admin. Il flusso è:
+
+1. **IoT → Plugins → Start** — **Enable cloud metrics** is on by default (for EnvironmentalDemo credentials are always injected)
+2. Horizon provisiona stream + token via `metrics-gateway:8093`
+3. Il plugin usa `MetricsWriter` (`s4t_metrics.py` montato su LR in `/opt/lab/`)
+4. **IoT → Metrics** → dashboard Grafana embedded + lista stream
+
+Database Influx: `s4t_iot` (non più `secco` nel lab aggiornato).
+
 ### InfluxDB (incluso in overlay lab)
 
 Se avviato separatamente:
@@ -165,18 +185,24 @@ docker run -d --name=influxdb --restart unless-stopped -p 8086:8086 \
 ```
 
 ```bash
-docker exec -it influxdb influx -username admin -password admin -execute "CREATE DATABASE secco"
+docker exec -it influxdb influx -username admin -password admin -execute "CREATE DATABASE s4t_iot"
 ```
 
 ### Plugin environmental (async)
 
-- File: `training/repos/ch15/plugin_demo`
+- File lab: `training/ch15-lab/plugin_demo_lab.py`
 - Modalità: **async** (callable OFF)
-- **Fix host InfluxDB** nel plugin se LR è in container:
+- **Start** injecta sempre i params metrics per EnvironmentalDemo:
 
-```python
-self.host = 'influxdb'   # stessa rete Docker s4t
+```json
+{
+  "metrics_url": "http://metrics-gateway:8093/v1/metrics/write",
+  "metrics_token": "<token>",
+  "metrics_stream": "environmental_data"
+}
 ```
+
+Senza `metrics_url`/`metrics_token` il plugin **si ferma subito** (non gira a vuoto).
 
 ### Dipendenze nel container LR
 
@@ -192,9 +218,21 @@ docker exec -it influxdb influx -username admin -password admin
 ```
 
 ```sql
-USE secco;
+USE s4t_iot;
 SHOW MEASUREMENTS;
 SELECT * FROM environmental_data LIMIT 5;
+```
+
+### Panel IoT Metrics + Grafana
+
+- Horizon: **IoT → Metrics** (`/horizon/iot/iot_metrics/`)
+- Grafana diretto: `http://{{VM_IP}}:3000`
+- Proxy Horizon (iframe): `http://{{VM_IP}}/horizon/metrics-live/`
+
+```bash
+curl http://{{VM_IP}}:8093/health
+python3 training/experiments/metrics/verify-metrics-lab.py
+./training/validate-lab-metrics.sh
 ```
 
 ---
@@ -207,6 +245,7 @@ chmod +x training/validate-lab.sh
 ./training/validate-lab-multiboard.sh
 ./training/validate-lab-vn.sh
 ./training/validate-lab-fl.sh
+./training/validate-lab-metrics.sh
 ```
 
 ---
@@ -223,6 +262,14 @@ training/experiments/multiboard/check-endpoints.sh
 
 Board: `board-alpha` → :1474, `board-beta` → :1475, `board-gamma` → :1476
 
+**IoT → Fleets** (`/horizon/iot/fleets/`):
+
+1. **Create Fleet** — nome, descrizione e selezione multipla delle board online
+2. Apri il **dettaglio fleet** → tab **Members** → **Manage members** per aggiungere/rimuovere board
+3. Tab **Operations** — **Inject / Start / Stop / Call / Remove plugin** su **tutte** le board della fleet in parallelo (stesse operazioni del pannello Plugins, pre-filtrate sulla fleet)
+
+Esempio Module D: fleet con alpha/beta/gamma → **Inject** plugin HelloName → **Call** con `{"name": "fleet-demo"}`.
+
 ### Module E — Virtual Networking (Ch.5)
 
 ```bash
@@ -234,11 +281,19 @@ training/experiments/virtual-networking/attach-port.sh list
 
 Horizon: `http://<IP>/horizon/iot/webservices/`
 
+La tabella **Web Services** puo restare vuota (*No items to display*) finche non si abilita il Web Services Manager su una board (demo: `training/experiments/webservices/setup-wstun-demo.py`).
+
 ### Module G — Federated Learning (Ch.19)
 
 Architettura come nel libro: **server Flower sulla VM cloud**, **3 board client** via plugin async Lightning-Rod (non una board come server).
 
-Richiede 3 board **online** (`board-alpha`, `board-beta`, `board-gamma`). Dataset predictive maintenance: `machine_1.csv`, `machine_2.csv`, `machine_3.csv` in `training/repos/ch19` (generati con `generate_pm_datasets.py`).
+Richiede 3 board **online** (`board-alpha`, `board-beta`, `board-gamma`). Il pannello **Boards** (`/horizon/iot/`, non `/horizon/iot/boards/`) puo elencare anche altre board registrate (delta/epsilon/zeta): il lab FL usa solo alpha/beta/gamma.
+
+Due scenari demo via plugin cloud:
+- **fl-client-heart** — heart_1/2/3.csv (Cap. 19)
+- **fl-client-pm** — machine_1/2/3.csv (predictive maintenance)
+
+Dataset in `training/repos/ch19` (generati con `generate_pm_datasets.py`).
 
 #### Setup una tantum (shell sulla VM)
 
@@ -251,7 +306,7 @@ cd training
 # Pannello Horizon nativo + servizio fl-control (:8091) + proxy live topology
 ./experiments/federated-learning/setup-fl-horizon.sh
 
-# Opzionale — demo pronta: crea plugin condiviso fl-client e lo inietta sulle board online
+# Registra fl-client-heart + fl-client-pm e inietta sulle board online
 ./experiments/federated-learning/setup-fl-demo-plugins.sh
 ```
 
@@ -259,14 +314,18 @@ cd training
 
 Apri **IoT → Federated Learning**: `http://<IP>/horizon/iot/federated_learning/`
 
-1. **Lab parameters** — imposta round, host/port server e dashboard → **Save** (persistono in `lab_config.json`)
-2. **Create / update FL client plugin** — registra il plugin condiviso **`fl-client`** (una tantum)
-3. Per ogni board online: **Inject** → avvia **`fl-client`** con JSON parametrico (`csv_file`, `board_name`; server/dashboard ereditati dai parametri lab)
-4. **Start Flower server** (o **Restart server** dopo cambio parametri)
-5. **Start all clients** sulle board online
+1. **Parameters** (opzionale) — round, host/port server e dashboard → **Save**
+2. **Select plugin** — `fl-client-heart` o `fl-client-pm` → aggiorna scenario/parametri UI (**non** avvia automaticamente il run)
+3. **Start server** — avvia/riavvia Flower + client alpha/beta/gamma
+4. **Inject on all boards** — se i plugin non sono ancora sulle edge board
+5. **Start all clients** — avvia solo i client edge (il server deve essere gia in esecuzione)
 6. **Live topology** — iframe su `/horizon/fl-live/?embed=1`
 
 Porte lab: Flower gRPC **8087** (WSTUN usa :8080), dashboard **8090**, control API **8091**.
+
+**Note IoT dashboard:** **Fleets** si gestisce dal pannello IoT (create + Members + Operations). Menu Horizon in inglese di default sul lab VM. Plugin Call: i log `LOG.info` compaiono nel pannello log board (file LR, non solo `docker logs`).
+
+**Demo WoT (URL indipendenti dall'IP Tailscale):** `http://<IP>/lab-ws/<porta>/` — vedi [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) e [`PORT_FORWARDING.md`](PORT_FORWARDING.md).
 
 CLI alternativa (debug): `./experiments/federated-learning/fl-server-ctl.sh start|stop|restart`
 
@@ -275,6 +334,19 @@ Se Horizon mostra **"Unable to retrieve boards list"**:
 ```bash
 ./scripts/fix-iotronic-wampagents.sh
 ```
+
+### SWC2026 — board manuali + accesso rete
+
+```bash
+cd training/swc2026
+./00-verify-demo.sh
+./04-list-lr-dashboards.sh
+BOARD_NAME=swc-edge-1 ./01-run-manual-lr.sh   # installa anche sshd in-container (no porta host)
+```
+
+Registrazione: WAMP `wss://crossbar:8181` (solo container Docker). Board **esterne** su Tailscale: `/etc/hosts` → VM IP per `crossbar` / `iotronic-wstun`, CA lab, vedi `docs/LAB_NETWORK_ACCESS.md`.
+
+Create Fleet: se compare *Unable to create fleet* / `uuid` su `None`, l'entrypoint UI applica già il `return` su `fleet_create`. Prima di Delete Fleet, scollega i membri (FK su `boards.fleet`).
 
 ### Module H — Blueprint (Ch.11)
 
@@ -292,7 +364,7 @@ training/experiments/blueprint/k3s-prereq.sh   # RAM ≥ 8 GB
 3. **Cap. 13 compose:** immagine LR placeholder `@sha256:<resolved-image-digest>` — overlay usa `mdslab/lrod:compose`
 4. **Cap. 15:** `localhost:8086` non raggiunge InfluxDB da LR container — usare hostname `influxdb`
 5. **Cap. 19 riga 727:** rimanda a Cap. 12 per install S4T; procedura corretta è **Cap. 13**
-6. **Cap. 19 FL:** server Flower sulla VM host; lab usa **predictive maintenance** (vibrazione/temperatura/corrente, target guasto imminente) con plugin condiviso **`fl-client`**. Porta lab **8087**. Dataset: `machine_*.csv` (estensione lab; libro usa heart_*.csv)
+6. **Cap. 19 FL:** server Flower sulla VM host; lab con plugin **`fl-client-heart`** (heart_*.csv) o **`fl-client-pm`** (machine_*.csv). Porta lab **8087**. Dataset PM: `machine_*.csv` (estensione lab; libro usa heart_*.csv)
 
 ---
 

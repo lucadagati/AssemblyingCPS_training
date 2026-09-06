@@ -11,6 +11,7 @@ export FL_ROUNDS="${FL_ROUNDS:-2}"
 export FL_PORT="${FL_PORT:-8087}"
 export FL_HOST="127.0.0.1"
 export FL_SERVER="127.0.0.1:${FL_PORT}"
+export FL_SCENARIO="${FL_SCENARIO:-heart}"
 
 cd "$CH19"
 "$PY" -m pip install -q flwr torch pandas scikit-learn 2>/dev/null || true

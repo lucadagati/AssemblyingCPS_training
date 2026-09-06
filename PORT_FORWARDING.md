@@ -1,51 +1,96 @@
 # Browser access to the S4T lab
 
-Replace `{{VM_IP}}` with your machine's public or LAN IP (set in `vm-ip.txt`).
+Replace `{{VM_IP}}` with **the IP you use to reach this VM** (LAN, Tailscale primary, or Tailscale secondary).  
+Same services answer on all of them — see [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md).
 
-## Recommended: VM public IP
+Examples on the conference lab VM:
+
+| Ingress | Example IP |
+|---------|------------|
+| LAN | `192.168.100.11` |
+| Tailscale primary (`asseblingcps`) | `100.74.114.23` |
+| Tailscale secondary (`lab-secondary`) | `100.123.142.39` |
+
+Copy `vm-ip.txt.example` → `vm-ip.txt` for scripts (`S4T_LAB_HOST`).
+
+## Recommended: open Horizon on your ingress IP
 
 | Service | URL |
 |---------|-----|
 | **Horizon UI** | `http://{{VM_IP}}/horizon` |
-| **Lightning-Rod UI** | `http://{{VM_IP}}:1474` |
+| **Lightning-Rod UI (alpha)** | `http://{{VM_IP}}:1474` |
 | **IoTronic API** | `http://{{VM_IP}}:8812` |
 | **InfluxDB** | `http://{{VM_IP}}:8086` |
+| **Grafana** | `http://{{VM_IP}}:3000` |
 
-Credentials: Horizon `admin` / `s4t` · Lightning-Rod `me` / `arancino` · InfluxDB `admin` / `admin`
+Credentials: Horizon `admin` / `s4t` · Lightning-Rod `me` / `arancino` · InfluxDB/Grafana `admin` / `admin`
 
-## IoT dashboards (browser extension / live demo)
+## WoT / WSTUN demos (path URLs — preferred)
 
-After Horizon login, open these paths directly:
+Do **not** hardcode a single Tailscale IP in slides. Use path proxy on port 80:
+
+| Demo (typical) | URL |
+|----------------|-----|
+| wot-fritzing | `http://{{VM_IP}}/lab-ws/50006/` |
+| weather-wot | `http://{{VM_IP}}/lab-ws/50064/` |
+| lr-nginx-demo | `http://{{VM_IP}}/lab-ws/50008/` |
+
+Direct `http://{{VM_IP}}:50006/` still works; `/lab-ws/` is Tailscale-agnostic.
+
+Horizon panel **IoT → Web Services (WoT)** lists Public URLs using the Host header of your session.
+
+## IoT dashboards
 
 | Panel | URL |
 |-------|-----|
 | **Boards** | `http://{{VM_IP}}/horizon/iot/` |
 | **Plugins** | `http://{{VM_IP}}/horizon/iot/plugins/` |
+| **Services** | `http://{{VM_IP}}/horizon/iot/services/` |
 | **Fleets** | `http://{{VM_IP}}/horizon/iot/fleets/` |
-| **Web Services** | `http://{{VM_IP}}/horizon/iot/webservices/` |
+| **Federated Learning** | `http://{{VM_IP}}/horizon/iot/federated_learning/` |
+| **Metrics** | `http://{{VM_IP}}/horizon/iot/metrics/` (live iframe `/horizon/metrics-live/`) |
+| **Web Services (WoT)** | `http://{{VM_IP}}/horizon/iot/wot/` (path may vary by enabled panel) |
 
-Lightning-Rod (login `me` / `arancino` first):
+Lightning-Rod host ports (lab containers):
 
-| Panel | URL |
+| Board | URL |
 |-------|-----|
-| Home | `http://{{VM_IP}}:1474/` |
-| Status | `http://{{VM_IP}}:1474/status` |
-| Configuration | `http://{{VM_IP}}:1474/config` |
+| alpha | `http://{{VM_IP}}:1474/` |
+| beta | `http://{{VM_IP}}:1475/` |
+| gamma | `http://{{VM_IP}}:1476/` |
+| delta | `http://{{VM_IP}}:1477/` |
+| epsilon | `http://{{VM_IP}}:1478/` |
+| zeta | `http://{{VM_IP}}:1479/` |
+| manuals (SWC) | `http://{{VM_IP}}:1482+` — see `swc2026/04-list-lr-dashboards.sh` |
 
-Note: `/horizon/iot/boards/` returns **404** — the correct Boards URL is `/horizon/iot/`.
+Note: `/horizon/iot/boards/` returns **404** — Boards live at `/horizon/iot/`.
 
-Quick check from any machine:
+Quick check:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://{{VM_IP}}:8812/
 curl -s -o /dev/null -w '%{http_code}\n' http://{{VM_IP}}/horizon
+curl -s -o /dev/null -w '%{http_code}\n' http://{{VM_IP}}/lab-ws/50006/
 ```
 
 ---
 
-## Alternative: Cursor port forwarding
+## Ports published on the VM
 
-If you prefer `localhost`, forward these ports in the **Cursor Ports** panel:
+| Port | Service |
+|-----:|---------|
+| 80 | Horizon + `/lab-ws/` + FL/metrics live proxies |
+| 1474–1479+ | Lightning-Rod UIs |
+| 5000 | Keystone |
+| 8080 | WSTUN |
+| 8181 | Crossbar WAMP |
+| 8812 | IoTronic Conductor |
+| 50001–50100 | WSTUN public tunnels |
+| 8086 / 3000 / 8090–8093 | Influx / Grafana / FL / metrics (lab overlay) |
+
+---
+
+## Alternative: Cursor port forwarding
 
 | Port | Service |
 |------|---------|
@@ -54,44 +99,23 @@ If you prefer `localhost`, forward these ports in the **Cursor Ports** panel:
 | 8812 | IoTronic Conductor |
 | 8086 | InfluxDB |
 
-Then open `http://localhost/horizon`, etc.
-
 ---
 
 ## Fallback: reverse proxy + Cloudflare tunnel
 
-Use only when the VM IP is not reachable (firewall, no VPN). Single entry point on port **9080**:
-
 ```bash
-# Terminal 1
 .venv/bin/python scripts/s4t_proxy.py --port 9080
-
-# Terminal 2 — copy the https://*.trycloudflare.com URL
 cloudflared tunnel --url http://127.0.0.1:9080 | tee proxy-tunnel.log
-```
-
-| Service | URL via tunnel |
-|---------|----------------|
-| Horizon | `https://TUNNEL/horizon` |
-| Lightning-Rod | `https://TUNNEL/lr/` |
-| IoTronic API | `https://TUNNEL/conductor/` |
-| InfluxDB | `https://TUNNEL/influx/` |
-
-Or use the helper script:
-
-```bash
-./scripts/start_lab_proxy.sh
+# or: ./scripts/start_lab_proxy.sh
 ```
 
 ---
 
 ## Screenshots for slides (on the VM)
 
-Playwright runs locally on the VM and does not need browser extension access:
-
 ```bash
 .venv/bin/python scripts/capture_horizon_authenticated.py
 .venv/bin/python scripts/capture_screenshots.py
 ```
 
-Assets are saved under `assets/chapter13|14|15/`.
+Assets under `assets/chapter13|14|15/`.

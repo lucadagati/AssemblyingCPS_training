@@ -13,13 +13,4 @@ class FederatedLearning(horizon.Panel):
     slug = "federated_learning"
 
 
-_panels = list(dashboard.Iot.panels)
-if "federated_learning" not in _panels:
-    try:
-        idx = _panels.index("plugins") + 1
-        _panels.insert(idx, "federated_learning")
-    except ValueError:
-        _panels.append("federated_learning")
-    dashboard.Iot.panels = _panels
-
 dashboard.Iot.register(FederatedLearning)

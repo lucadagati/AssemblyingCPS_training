@@ -44,15 +44,15 @@
             <select id="fl-lab-plugin-select" name="fl_lab_plugin" class="form-control fl-lab-plugin-sync" style="max-width: 520px;">
               <option value="fl-client-heart"
                 {% if selected_lab_plugin == 'fl-client-heart' %}selected{% endif %}>
-                fl-client-heart — {% trans "Heart disease (Ch.19)" %}
+                fl-client-heart - {% trans "Heart disease classification" %}
               </option>
               <option value="fl-client-pm"
                 {% if selected_lab_plugin == 'fl-client-pm' %}selected{% endif %}>
-                fl-client-pm — {% trans "Predictive maintenance" %}
+                fl-client-pm - {% trans "Predictive maintenance" %}
               </option>
             </select>
             <p class="help-block" style="margin-bottom: 0;">
-              {% trans "Choosing a plugin selects the Flower server scenario and starts or restarts the run automatically (alpha, beta, gamma)." %}
+              {% trans "Choosing a plugin updates the Flower scenario and board parameters. Click Start server to run (or restart) on alpha, beta and gamma." %}
             </p>
           </div>
         </div>
@@ -140,7 +140,16 @@
       <span class="fa fa-chevron-right fl-chevron"></span>
       {% trans "FL client plugin (async)" %}
       {% if plugins_exist %}
-        <span class="label label-success pull-right">{% trans "ready" %}</span>
+        <span class="label label-success pull-right" title="{% trans 'fl-client-heart and fl-client-pm exist in the cloud catalog' %}">
+          {% trans "plugins registered" %}
+        </span>
+      {% else %}
+        <span class="label label-warning pull-right">{% trans "plugins missing" %}</span>
+      {% endif %}
+      {% if total_clients %}
+        <span class="label {% if all_injected %}label-success{% elif injected_count %}label-info{% else %}label-default{% endif %} pull-right" style="margin-right: 6px;">
+          {{ injected_count }}/{{ total_clients }} {% trans "injected" %}
+        </span>
       {% endif %}
     </h3>
   </div>
@@ -174,8 +183,13 @@
 </div>
 
 <div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">{% trans "Edge FL clients" %}</h3>
+  <div class="panel-heading clearfix">
+    <h3 class="panel-title pull-left">{% trans "Edge FL clients" %}</h3>
+    {% if total_clients %}
+    <span class="label {% if all_injected %}label-success{% elif injected_count %}label-info{% else %}label-default{% endif %} pull-right" style="margin-top: 2px;">
+      {{ injected_count }}/{{ total_clients }} {% trans "injected" %}
+    </span>
+    {% endif %}
   </div>
   <div class="panel-body">
     <form method="post" action="{% url 'horizon:iot:federated_learning:index' %}" class="fl-clients-form">
@@ -226,14 +240,14 @@
                           style="font-family: monospace; font-size: 11px;">{{ client.params_json }}</textarea>
                 {% if not client.params_ready %}
                 <p class="help-block text-muted" style="margin:4px 0 0;">
-                  {% trans "Board not online or dataset missing — fill JSON after onboarding." %}
+                  {% trans "Board not online or dataset missing - fill JSON after onboarding." %}
                 </p>
                 {% endif %}
               </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="4" class="text-muted">{% trans "No boards found - complete Module D onboarding first." %}</td>
+              <td colspan="4" class="text-muted">{% trans "No boards found - register and bring boards online first." %}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -279,7 +293,7 @@
   var PLUGIN_SCENARIO = {
     'fl-client-heart': {
       scenario: 'heart',
-      label: '{% trans "Heart disease (Ch.19)" %}',
+      label: '{% trans "Heart disease classification" %}',
       csv: {
         'board-alpha': '/opt/fl/heart_1.csv',
         'board-beta': '/opt/fl/heart_2.csv',
@@ -297,7 +311,7 @@
     },
     'fl-client': {
       scenario: 'heart',
-      label: '{% trans "Heart disease (Ch.19)" %}',
+      label: '{% trans "Heart disease classification" %}',
       csv: {
         'board-alpha': '/opt/fl/heart_1.csv',
         'board-beta': '/opt/fl/heart_2.csv',
@@ -574,22 +588,18 @@
   }
 
   var labPluginSelect = document.getElementById('fl-lab-plugin-select');
-  var labPluginAutoRun = false;
   var lastLabPlugin = '';
   if (labPluginSelect) {
     lastLabPlugin = labPluginSelect.value;
     labPluginSelect.addEventListener('change', function() {
       if (labPluginSelect.value === lastLabPlugin) return;
       lastLabPlugin = labPluginSelect.value;
+      // Update UI/params only - do not auto-submit. Start server is explicit.
       updatePluginCodeDisplay(labPluginSelect.value);
       applyLabPluginToAll(labPluginSelect.value);
-      if (labPluginAutoRun) {
-        submitLabForm('run_lab_plugin');
-      }
     });
     updatePluginCodeDisplay(labPluginSelect.value);
     applyLabPluginToAll(labPluginSelect.value);
-    labPluginAutoRun = true;
   }
 
   var pluginCollapse = document.getElementById('fl-plugin-collapse');

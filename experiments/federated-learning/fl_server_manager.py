@@ -126,8 +126,7 @@ def stop(cfg: dict | None = None) -> dict:
     pids = _load_pids()
     _terminate(int(pids.get("dashboard", 0) or 0))
     _terminate(int(pids.get("server", 0) or 0))
-    _kill_port(int(cfg["fl_port"]))
-    _kill_port(int(cfg["fl_dashboard_port"]))
+    _ensure_ports_free(cfg)
     if PID_FILE.is_file():
         PID_FILE.unlink()
     _clear_dashboard_state()
@@ -155,9 +154,36 @@ def _pids_on_port(port: int) -> list[int]:
     return found
 
 
+def _wait_port_free(host: str, port: int, timeout: float = 8.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if not _port_open(host, int(port)):
+            return
+        time.sleep(0.2)
+    _kill_port(int(port))
+    time.sleep(0.3)
+
+
+def _server_log_tail(n: int = 30) -> str:
+    log_path = LOG_DIR / "flower-server.log"
+    if not log_path.is_file():
+        return ""
+    try:
+        lines = log_path.read_text(errors="replace").splitlines()
+        return "\n".join(lines[-n:])
+    except OSError:
+        return ""
+
+
 def _kill_port(port: int) -> None:
     for pid in _pids_on_port(port):
         _terminate(pid)
+
+
+def _ensure_ports_free(cfg: dict) -> None:
+    for port in (int(cfg["fl_port"]), int(cfg["fl_dashboard_port"])):
+        _kill_port(port)
+        _wait_port_free("127.0.0.1", port)
 
 
 def _clear_dashboard_state() -> None:
@@ -169,12 +195,15 @@ def _clear_dashboard_state() -> None:
             pass
 
 
-def _reset_dashboard_state(port: int, total_rounds: int) -> None:
+def _reset_dashboard_state(port: int, total_rounds: int, scenario: str = "heart") -> None:
     try:
         import urllib.error
         import urllib.request
 
-        payload = json.dumps({"total_rounds": int(total_rounds)}).encode("utf-8")
+        payload = json.dumps({
+            "total_rounds": int(total_rounds),
+            "fl_scenario": scenario,
+        }).encode("utf-8")
         req = urllib.request.Request(
             "http://127.0.0.1:{0}/api/reset".format(port),
             data=payload,
@@ -196,6 +225,7 @@ def _lab_file_cfg() -> dict:
             return {}
         mapped = {
             "fl_rounds": data.get("fl_rounds"),
+            "fl_scenario": data.get("fl_scenario"),
             "fl_port": data.get("server_port"),
             "fl_dashboard_port": data.get("dashboard_port"),
         }
@@ -207,18 +237,24 @@ def _lab_file_cfg() -> dict:
 def start(cfg: dict | None = None) -> dict:
     cfg = {**DEFAULTS, **_lab_file_cfg(), **(cfg or {})}
     stop(cfg)
-    _kill_port(int(cfg["fl_port"]))
-    _kill_port(int(cfg["fl_dashboard_port"]))
+    _ensure_ports_free(cfg)
     RUN_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     py = _python()
+    scenario = str(cfg.get("fl_scenario", "heart"))
+    test_csv = {
+        "heart": "data_test_heart.csv",
+        "pm": "data_test_pm.csv",
+    }.get(scenario, "data_test_heart.csv")
     env = os.environ.copy()
     env.update(
         {
             "FL_ROUNDS": str(cfg["fl_rounds"]),
             "FL_PORT": str(cfg["fl_port"]),
             "FL_HOST": str(cfg["fl_host"]),
+            "FL_SCENARIO": scenario,
+            "FL_TEST_CSV": test_csv,
             "FL_DASHBOARD": "1",
             "FL_DASHBOARD_PORT": str(cfg["fl_dashboard_port"]),
             "FL_DASHBOARD_HOST": str(cfg["fl_dashboard_host"]),
@@ -250,23 +286,52 @@ def start(cfg: dict | None = None) -> dict:
     _save_pids({"server": server_proc.pid, "dashboard": dash_proc.pid})
 
     dash_port = int(cfg["fl_dashboard_port"])
+    fl_port = int(cfg["fl_port"])
     total_rounds = int(cfg["fl_rounds"])
     for _ in range(10):
         if _port_open("127.0.0.1", dash_port):
-            _reset_dashboard_state(dash_port, total_rounds)
+            _reset_dashboard_state(dash_port, total_rounds, scenario)
             break
         time.sleep(0.25)
 
-    for _ in range(20):
-        st = status(cfg)
-        if st["running"]:
-            return st
-        time.sleep(0.25)
+    _wait_flower_grpc_ready(fl_port, server_proc.pid, timeout=45)
 
     st = status(cfg)
     if not st["running"]:
         raise RuntimeError("Flower server failed to start — check .run/logs/")
+    tail = _server_log_tail()
+    if "already in use" in tail:
+        raise RuntimeError(
+            "Flower port {0} still occupied — stop stray server processes and retry".format(
+                cfg["fl_port"]
+            )
+        )
     return st
+
+
+def _wait_flower_grpc_ready(port: int, server_pid: int, timeout: float = 45.0) -> None:
+    """Wait until our Flower process is listening and gRPC initialized."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if not _alive(server_pid):
+            tail = _server_log_tail(20)
+            if "already in use" in tail:
+                break
+            time.sleep(0.3)
+            continue
+        tail = _server_log_tail(25)
+        if "gRPC server running" in tail and "already in use" not in tail:
+            if _port_open("127.0.0.1", port):
+                time.sleep(1.0)
+                return
+        if _port_open("127.0.0.1", port) and _alive(server_pid):
+            time.sleep(2.0)
+            return
+        time.sleep(0.5)
+    if not _port_open("127.0.0.1", port):
+        raise RuntimeError(
+            "Flower gRPC not ready on port {0} within {1}s".format(port, int(timeout))
+        )
 
 
 if __name__ == "__main__":

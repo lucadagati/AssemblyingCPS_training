@@ -11,7 +11,7 @@ FL_DOCKER_GW = os.environ.get("FL_DOCKER_GW", "172.18.0.1")
 FL_SERVER_PORT = os.environ.get("FL_PORT", "8087")
 FL_DASHBOARD_PORT = os.environ.get("FL_DASHBOARD_PORT", "8090")
 
-# Two cloud plugins (same LR source code) — pick example via Cloud plugin dropdown.
+# Two cloud plugins (same LR source code) - pick example via Cloud plugin dropdown.
 FL_PLUGIN_HEART = "fl-client-heart"
 FL_PLUGIN_PM = "fl-client-pm"
 FL_LAB_PLUGIN_NAMES = (FL_PLUGIN_HEART, FL_PLUGIN_PM)
@@ -34,17 +34,17 @@ LAB_BOARD_NAMES = frozenset(BOARD_INDEX.keys())
 
 FL_SCENARIOS = {
     "heart": {
-        "label": "Heart disease (Ch.19)",
-        "short": "Heart Ch.19",
+        "label": "Heart disease classification",
+        "short": "Heart disease",
         "plugin_name": FL_PLUGIN_HEART,
         "csv_prefix": "heart",
         "test_csv": "data_test_heart.csv",
-        "dashboard_subtitle": "Clinical cohorts · federated diagnosis · 3 edge sites",
-        "cloud_subtitle": "Global clinical model · FedAvg",
+        "dashboard_subtitle": "Clinical cohorts / federated diagnosis / 3 edge sites",
+        "cloud_subtitle": "Global clinical model / FedAvg",
         "metric_title": "Diagnosis prediction (global model)",
-        "metric_hint": "Cap. 19 tabular features — raw patient data stays on each board",
+        "metric_hint": "Tabular clinical features - raw patient data stays on each board",
         "metric_label": "diagnosis accuracy",
-        "server_banner": "Heart disease FL (Ch.19) — 3 edge cohorts",
+        "server_banner": "Heart disease FL - 3 edge cohorts",
         "eval_message": "diagnosis accuracy",
         "clients": {
             "board-alpha": {"line": "Clinical cohort A", "csv": "heart_1.csv"},
@@ -58,12 +58,12 @@ FL_SCENARIOS = {
         "plugin_name": FL_PLUGIN_PM,
         "csv_prefix": "machine",
         "test_csv": "data_test_pm.csv",
-        "dashboard_subtitle": "Predictive maintenance · failure prediction · 3 production lines",
-        "cloud_subtitle": "Global failure model · FedAvg",
+        "dashboard_subtitle": "Predictive maintenance / failure prediction / 3 production lines",
+        "cloud_subtitle": "Global failure model / FedAvg",
         "metric_title": "Failure prediction (global model)",
-        "metric_hint": "Vibration · temperature · motor current — CSVs stay on each line",
+        "metric_hint": "Vibration / temperature / motor current - CSVs stay on each line",
         "metric_label": "detection accuracy",
-        "server_banner": "Predictive maintenance FL — 3 production lines",
+        "server_banner": "Predictive maintenance FL - 3 production lines",
         "eval_message": "failure detection accuracy",
         "clients": {
             "board-alpha": {"line": "CNC spindle", "csv": "machine_1.csv"},

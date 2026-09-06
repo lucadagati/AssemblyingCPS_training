@@ -29,7 +29,7 @@ const SCENARIO_UI = {
     },
   },
   pm: {
-    pill: "Pred. maintenance",
+    pill: "Maintenance",
     subtitle: "3 production lines · federated learning",
     cloudSubtitle: "Global model · FedAvg",
     clients: {
@@ -134,14 +134,14 @@ function spawnFlow(clientId, color, duration) {
 }
 
 function statusLabel(status, phase) {
+  if (phase === "finished") {
+    return "done";
+  }
   if (status === "reconnecting") {
     return "reconnecting";
   }
   if (status && status !== "offline") {
     return status;
-  }
-  if (phase === "finished") {
-    return "done";
   }
   if (phase === "waiting_clients" || phase === "broadcast" || phase === "local_training") {
     return "waiting";
@@ -167,17 +167,20 @@ function updateClients(state) {
         ? csvName + " · " + info.samples + " samples"
         : csvName;
     }
-    g.classList.remove("active", "training", "uploading", "reconnecting", "waiting");
-    if (info.status === "training") g.classList.add("training", "active");
-    if (info.status === "reconnecting") g.classList.add("reconnecting", "active");
-    if (info.status === "uploaded" || info.status === "connected") {
+    g.classList.remove("active", "training", "uploading", "reconnecting", "waiting", "done");
+    if (phase === "finished") {
+      g.classList.add("done");
+    } else if (info.status === "training") {
+      g.classList.add("training", "active");
+    } else if (info.status === "reconnecting") {
+      g.classList.add("reconnecting", "active");
+    } else if (info.status === "uploaded" || info.status === "connected") {
       g.classList.add("uploading", "active");
-    }
-    if (info.status === "connected") g.classList.add("active");
-    if (
+    } else if (info.status === "connected") {
+      g.classList.add("active");
+    } else if (
       label === "waiting" &&
       phase !== "idle" &&
-      phase !== "finished" &&
       info.status === "offline"
     ) {
       g.classList.add("waiting", "active");
@@ -436,7 +439,9 @@ function fetchState() {
 
 function connect() {
   var base = apiBase();
-  initLiveZoom();
+  if (!document.body.classList.contains("embed")) {
+    initLiveZoom();
+  }
   fetchState();
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(fetchState, 1000);

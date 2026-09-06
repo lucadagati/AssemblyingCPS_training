@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT))
 import fl_events  # noqa: E402
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
 
 
 @app.route("/")
@@ -70,8 +72,10 @@ def client_event():
 
 @app.route("/api/reset", methods=["POST"])
 def reset_state():
-    rounds = int(request.json.get("total_rounds", os.environ.get("FL_ROUNDS", "2"))) if request.is_json else 2
-    fl_events.reset(rounds)
+    body = request.get_json(silent=True) or {}
+    rounds = int(body.get("total_rounds", os.environ.get("FL_ROUNDS", "2")))
+    scenario = body.get("fl_scenario", os.environ.get("FL_SCENARIO", "heart"))
+    fl_events.reset(rounds, scenario=scenario)
     return jsonify({"ok": True})
 
 

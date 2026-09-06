@@ -58,6 +58,14 @@ class CreateFleetForm(forms.SelfHandlingForm):
             fleet = iotronic.fleet_create(
                 request, data["name"], data["description"]
             )
+            # Upstream fleet_create historically returned None; recover by name.
+            if fleet is None or not getattr(fleet, "uuid", None):
+                for item in iotronic.fleet_list(request, None) or []:
+                    if getattr(item, "name", None) == data["name"]:
+                        fleet = item
+                        break
+            if fleet is None or not getattr(fleet, "uuid", None):
+                raise RuntimeError("fleet_create returned no fleet object")
             fleet_helpers.set_fleet_members(
                 request, fleet.uuid, data.get("board_list") or []
             )

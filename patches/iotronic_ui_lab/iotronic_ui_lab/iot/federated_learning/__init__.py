@@ -1,1 +1,1 @@
-# Federated Learning live panel (Module G).
+# Federated Learning live panel.
