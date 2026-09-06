@@ -1,5 +1,6 @@
 *.env
 experiments/federated-learning/.run/
+experiments/webservices/**/*-state.json
 experiments/webservices/*-state.json
 experiments/webservices/weather-state.json
 experiments/webservices/wstun-state.json

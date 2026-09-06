@@ -1,8 +1,0 @@
-{
-  "host": "100.74.114.23",
-  "board": "board-alpha",
-  "service": "wot-fritzing",
-  "local_port": 8090,
-  "cloud_port": 50006,
-  "verified": true
-}
