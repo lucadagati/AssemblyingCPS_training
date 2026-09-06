@@ -19,7 +19,7 @@ def slides() -> list:
             "I/Ocloud and an Active board, Modules B through I cannot proceed.",
             "Today's session combines Chapter 4 (why Stack4Things exists) with Chapter 13 "
             "(how to deploy it reproducibly using Docker Compose).",
-            "The book authors (Longo, Merlino, Puliafito, Benomar — MDSLab, University of Messina) "
+            "The book authors (the book authors — MDSLab, University of Messina) "
             "designed S4T as an OpenStack extension for IoT fleet management.",
             "By the end of this hour you will have reproduced the S4T testbed that every subsequent "
             "chapter assumes as its starting environment.",

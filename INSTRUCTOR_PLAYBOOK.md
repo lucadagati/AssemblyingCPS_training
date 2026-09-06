@@ -1,6 +1,6 @@
 # S4T Modular Training — Instructor Playbook
 
-English modular curriculum for Longo + Merlino co-teaching on a **single lab VM** (`training/vm-ip.txt`).
+English modular curriculum for instructors teaching on a **single lab VM** (`training/vm-ip.txt`).
 
 ## Training paths
 
@@ -16,23 +16,23 @@ Slides are tagged in speaker notes: `[CORE]`, `[EXT]`, `[ADV]` (timing only — 
 
 | ID | Module | Lead | Minutes | Skip if short? |
 |----|--------|------|---------|----------------|
-| A | Deploy Ch.13 | Longo | 60 | — |
-| B | Plugins Ch.14 | Longo | 60 | Docker plugin optional (−15) |
-| C | Environmental Ch.15 | Merlino | 60 | — |
-| D | Multi-board & Fleet | Longo | 45–60 | Fleet inject (−15) |
-| E | Virtual Networking Ch.5 | Longo | 45–60 | WAgent log fallback (−20) |
-| F | Web Services Ch.14 | Longo | 30–45 | — |
-| G | Federated Learning Ch.19 | Merlino | 60–90 | Use `FL_ROUNDS=2` |
-| H | Blueprint Ch.11 | Longo | 45–60 | K3s pre-provisioned only |
-| I | FaaS / Deviceless Ch.7 | Merlino | 30–45 | Theory-only (−15) |
+| A | Deploy Ch.13 | Instructor | 60 | — |
+| B | Plugins Ch.14 | Instructor | 60 | Docker plugin optional (−15) |
+| C | Environmental Ch.15 | Instructor | 60 | — |
+| D | Multi-board & Fleet | Instructor | 45–60 | Fleet inject (−15) |
+| E | Virtual Networking Ch.5 | Instructor | 45–60 | WAgent log fallback (−20) |
+| F | Web Services Ch.14 | Instructor | 30–45 | — |
+| G | Federated Learning Ch.19 | Instructor | 60–90 | Use `FL_ROUNDS=2` |
+| H | Blueprint Ch.11 | Instructor | 45–60 | K3s pre-provisioned only |
+| I | FaaS / Deviceless Ch.7 | Instructor | 30–45 | Theory-only (−15) |
 
-## Co-teaching split
+## Teaching split
 
-- **Longo:** Modules A, B, D, E, F, H — infrastructure, deploy, plugins, networking, Blueprint.
-- **Merlino:** Modules C, G, I — environmental dataflow, FL, FaaS contrast.
+- **Instructor A:** Modules A, B, D, E, F, H — infrastructure, deploy, plugins, networking, Blueprint.
+- **Instructor B:** Modules C, G, I — environmental dataflow, FL, FaaS contrast.
 - **Both:** Course Map (5 min), wrap-up, Q&A.
 
-Handoff after Slot 2 (Module B): confirm board Active + Hello plugin works before Merlino starts Module C.
+Handoff after Slot 2 (Module B): confirm board Active + Hello plugin works before Module C starts.
 
 ## Pre-class checklist (instructor)
 

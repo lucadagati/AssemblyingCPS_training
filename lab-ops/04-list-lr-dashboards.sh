@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SWC2026 — list every Lightning-Rod dashboard URL (board <-> host port).
+# Lab ops — list every Lightning-Rod dashboard URL (board <-> host port).
 # Inside each container LR always serves :1474; the HOST port is what you open.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"

@@ -351,7 +351,7 @@ def build_slot1():
             "Registrare una virtual board e configurare Lightning-Rod",
             "Consegna: screenshot board in stato Active",
         ]),
-        ("hands_on", "Check ambiente corsisti", [
+        ("hands_on", "Check lab environment", [
             "$ docker --version && docker compose version",
             "$ groups | grep docker",
             "$ free -h    # >= 4 GB RAM liberi",
@@ -366,7 +366,7 @@ def build_slot1():
             add_content_slide(prs, item[1], item[2], item[3] if len(item) > 3 else "", hands_on=True)
         else:
             add_content_slide(prs, item[1], item[2], item[3] if len(item) > 3 else "")
-    out = SLIDES_DIR / "Slot1_Longo_Deploy_IOcloud.pptx"
+    out = SLIDES_DIR / "Slot1_Deploy_IOcloud.pptx"
     prs.save(str(out))
     print(f"Saved {out} ({len(prs.slides)} slides)")
     return out
@@ -381,7 +381,7 @@ def build_slot2():
         "Demo Docker lifecycle plugin (opz.)",
     ])
     add_code_slide(prs, "HelloNamePlugin (sync)", HELLO_PLUGIN)
-    out = SLIDES_DIR / "Slot2_Longo_Plugin_Services.pptx"
+    out = SLIDES_DIR / "Slot2_Plugin_Services.pptx"
     prs.save(str(out))
     print(f"Saved {out} ({len(prs.slides)} slides)")
     return out
@@ -395,7 +395,7 @@ def build_slot3():
         "Plugin async environmental_data → InfluxDB",
         "Query validazione dati",
     ])
-    out = SLIDES_DIR / "Slot3_Merlino_IoT_Computation.pptx"
+    out = SLIDES_DIR / "Slot3_IoT_Computation.pptx"
     prs.save(str(out))
     print(f"Saved {out} ({len(prs.slides)} slides)")
     return out
@@ -413,7 +413,7 @@ def build_handout_pdf():
     c = canvas.Canvas(str(out), pagesize=A4)
     w, h = A4
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(2 * cm, h - 2 * cm, "Laboratorio S4T — Handout corsisti")
+    c.drawString(2 * cm, h - 2 * cm, "Laboratorio S4T — Lab handout")
     c.save()
     print(f"Saved {out}")
     return out

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# SWC2026 — stop/remove a manually created Lightning-Rod (+ volumes).
+# Lab ops — stop/remove a manually created Lightning-Rod (+ volumes).
 # Optionally delete the IoTronic board too.
 #
 # Usage:
-#   ./02-destroy-manual-lr.sh lightning-rod-board-swc-...
-#   ./02-destroy-manual-lr.sh lightning-rod-board-swc-... --delete-board
+#   ./02-destroy-manual-lr.sh lightning-rod-board-lab-...
+#   ./02-destroy-manual-lr.sh lightning-rod-board-lab-... --delete-board
 #   ./02-destroy-manual-lr.sh          # uses .last-manual-lr.env
 #
 set -euo pipefail
@@ -27,9 +27,9 @@ if [[ -z "$NAME" && -f "$DIR/.last-manual-lr.env" ]]; then
   # shellcheck disable=SC1091
   source "$DIR/.last-manual-lr.env"
   NAME="${CONTAINER_NAME:-}"
-elif [[ -z "$NAME" && -f /tmp/swc2026-last-manual-lr.env ]]; then
+elif [[ -z "$NAME" && -f /tmp/lab-ops-last-manual-lr.env ]]; then
   # shellcheck disable=SC1091
-  source /tmp/swc2026-last-manual-lr.env
+  source /tmp/lab-ops-last-manual-lr.env
   NAME="${CONTAINER_NAME:-}"
 fi
 
@@ -112,5 +112,5 @@ PY
   fi
 fi
 
-rm -f "$DIR/.last-manual-lr.env" /tmp/swc2026-last-manual-lr.env
+rm -f "$DIR/.last-manual-lr.env" /tmp/lab-ops-last-manual-lr.env
 echo "Done."

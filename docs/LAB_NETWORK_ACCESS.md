@@ -164,6 +164,6 @@ curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1/lab-ws/50006/
 |------|------|
 | `vm-ip.txt` / `vm-ip.txt.example` | Operator-facing IP for scripts |
 | `PORT_FORWARDING.md` | Browser URL tables |
-| `swc2026/` | Conference create/destroy LR helpers |
+| `lab-ops/` | Conference create/destroy LR helpers |
 | `patches/apache-wot-ws-proxy.conf` | `/lab-ws/` proxy |
 | `experiments/multiboard/lr_log_proxy.py` | LR provision + log tail |

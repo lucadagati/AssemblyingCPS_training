@@ -6,7 +6,7 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 
 **417 slides** across 10 English PPTX decks (Modules A–I). Slide URLs use placeholder `{{VM_IP}}` — replace with your lab host IP before presenting.
 
-**Recent lab ops:** see [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) (Tailscale dual ingress, `/lab-ws/` demos, external boards, SWC2026 scripts).
+**Recent lab ops:** see [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) (Tailscale dual ingress, `/lab-ws/` demos, external boards, Lab ops scripts).
 
 ---
 
@@ -35,11 +35,11 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 
 4. **Follow the lab** using:
    - [`HANDS_ON_COMMANDS.md`](HANDS_ON_COMMANDS.md) — copy-paste commands (EN)
-   - [`GUIDA_SETUP_CORSISTI.md`](GUIDA_SETUP_CORSISTI.md) — setup guide (IT)
+   - [`GUIDA_SETUP.md`](GUIDA_SETUP.md) — setup guide (IT)
    - [`PORT_FORWARDING.md`](PORT_FORWARDING.md) — browser URLs + `/lab-ws/` demos
    - [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) — multi-ingress & external boards
    - [`docs/BOOK_DIFFERENCES.md`](docs/BOOK_DIFFERENCES.md) — book vs lab
-   - [`swc2026/`](swc2026/) — conference helpers (manual LR create/destroy)
+   - [`lab-ops/`](lab-ops/) — manual LR helpers (manual LR create/destroy)
    - `slides/Module*.pptx` — decks (Find/Replace `{{VM_IP}}` if needed)
 
 ### Core path deliverables (3 h)
@@ -72,7 +72,7 @@ http://{{VM_IP}}/horizon         # Horizon
 | [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) | Tailscale / LAN / external board |
 | [`decks/*.py`](decks/) | Slide source — edit and regenerate |
 | [`assets/`](assets/) | Horizon/LR screenshots + architecture PNGs |
-| [`swc2026/`](swc2026/) | Live-session board create / port map |
+| [`lab-ops/`](lab-ops/) | Manual LR board create / port map |
 
 ### Regenerate slides after editing `decks/*.py`
 
@@ -115,7 +115,7 @@ See [slides/README.md](slides/README.md) for sequence diagram mapping.
 | `{{VM_IP}}` | Placeholder in slides and docs |
 | Horizon | `admin` / `s4t` |
 | Lightning-Rod | `me` / `arancino` |
-| LR container SSH (SWC scripts) | `root` / `arancino` (inside container only; no host port) |
+| LR container SSH (lab-ops scripts) | `root` / `arancino` (inside container only; no host port) |
 
 ---
 

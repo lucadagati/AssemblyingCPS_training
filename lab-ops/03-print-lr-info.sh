@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SWC2026 — print Lightning-Rod container IP / ports / board mapping.
+# Lab ops — print Lightning-Rod container IP / ports / board mapping.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=env.sh

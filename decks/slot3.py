@@ -388,6 +388,6 @@ def slides() -> list:
             "□ Board Active screenshot (Module A).",
             "□ HelloName Plugin Call output in Horizon or LR log (Module B).",
             "□ InfluxDB SELECT * FROM environmental_data LIMIT 5 output (Module C).",
-            "Material: training/GUIDA_SETUP_CORSISTI.md · training/HANDS_ON_COMMANDS.md",
+            "Material: training/GUIDA_SETUP.md · training/HANDS_ON_COMMANDS.md",
         ]),
     ]

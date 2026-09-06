@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SWC2026 — verify demo health; restart/relaunch what is broken.
+# Lab ops — verify demo health; restart/relaunch what is broken.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=env.sh

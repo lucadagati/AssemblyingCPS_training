@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# SWC2026 — shared defaults for Stack4Things lab demo scripts.
+# Lab ops — shared defaults for Stack4Things lab demo scripts.
 # Override any variable before calling the scripts, e.g.:
 #   BOARD_NAME=demo-swc HOST_PORT=1482 ./01-run-manual-lr.sh
 
-SWC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TRAINING_ROOT="$(cd "$SWC_DIR/.." && pwd)"
+LAB_OPS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TRAINING_ROOT="$(cd "$LAB_OPS_DIR/.." && pwd)"
 
 # Lab host (Tailscale / public) for Horizon URLs printed to the operator
 if [[ -z "${S4T_LAB_HOST:-}" && -f "$TRAINING_ROOT/vm-ip.txt" ]]; then
@@ -21,7 +21,7 @@ export HORIZON_USER="${HORIZON_USER:-admin}"
 export HORIZON_PASS="${HORIZON_PASS:-s4t}"
 
 export TRAINING_ROOT
-export SWC_DIR
+export LAB_OPS_DIR
 export METRICS_SDK_HOST="${METRICS_SDK_HOST:-$TRAINING_ROOT/experiments/metrics/s4t_metrics.py}"
 export OPT_FL_HOST="${OPT_FL_HOST:-$TRAINING_ROOT/experiments/federated-learning/opt-fl}"
 export FL_PYTHON_VOL="${FL_PYTHON_VOL:-ch13_lr_fl_python}"

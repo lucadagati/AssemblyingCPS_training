@@ -7,7 +7,7 @@ experiments/webservices/wstun-state.json
 *.pyc
 __pycache__/
 repos/
-swc2026/.last-manual-lr.env
+lab-ops/.last-manual-lr.env
 .venv/
 vm-ip.txt
 !vm-ip.txt.example

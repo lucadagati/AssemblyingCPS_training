@@ -63,7 +63,7 @@ Lightning-Rod host ports (lab containers):
 | delta | `http://{{VM_IP}}:1477/` |
 | epsilon | `http://{{VM_IP}}:1478/` |
 | zeta | `http://{{VM_IP}}:1479/` |
-| manuals (SWC) | `http://{{VM_IP}}:1482+` — see `swc2026/04-list-lr-dashboards.sh` |
+| manual LR boards | `http://{{VM_IP}}:1482+` — see `lab-ops/04-list-lr-dashboards.sh` |
 
 Note: `/horizon/iot/boards/` returns **404** — Boards live at `/horizon/iot/`.
 

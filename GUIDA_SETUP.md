@@ -3,7 +3,7 @@
 **Corso:** Part II del libro *Assembling Smart Cyber-Physical Systems*  
 **Core (3 h):** Cap. 13, 14, 15  
 **Estensioni (6–9 h):** multi-board, Ch.5 VN, web services, Ch.19 FL, Ch.11 Blueprint, Ch.7 FaaS  
-**Docenti:** Francesco Longo (Slot 1–2 + estensioni infra), Giovanni Merlino (Slot 3 + FL/FaaS)
+**Setup:** lab VM + Docker Compose overlay (`patches/docker-compose.lab.yml`)
 
 Vedi anche: [HANDS_ON_COMMANDS.md](HANDS_ON_COMMANDS.md) (EN) · [docs/MODULES.md](docs/MODULES.md)
 
@@ -110,7 +110,7 @@ docker compose -f docker-compose.yml -f ../../patches/docker-compose.lab.yml ps
 | 8812 | IoTronic Conductor API |
 | 80 (+ `/lab-ws/<port>/`) | Horizon + proxy demo WoT/WSTUN (indipendente dall'IP Tailscale) |
 
-Vedi anche: [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) · [`docs/CHANGELOG.md`](docs/CHANGELOG.md) · [`swc2026/README.md`](swc2026/README.md)
+Vedi anche: [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) · [`docs/CHANGELOG.md`](docs/CHANGELOG.md) · [`lab-ops/README.md`](lab-ops/README.md)
 
 ---
 
@@ -335,13 +335,13 @@ Se Horizon mostra **"Unable to retrieve boards list"**:
 ./scripts/fix-iotronic-wampagents.sh
 ```
 
-### SWC2026 — board manuali + accesso rete
+### Lab ops — board manuali + accesso rete
 
 ```bash
-cd training/swc2026
+cd training/lab-ops
 ./00-verify-demo.sh
 ./04-list-lr-dashboards.sh
-BOARD_NAME=swc-edge-1 ./01-run-manual-lr.sh   # installa anche sshd in-container (no porta host)
+BOARD_NAME=lab-edge-1 ./01-run-manual-lr.sh   # installa anche sshd in-container (no porta host)
 ```
 
 Registrazione: WAMP `wss://crossbar:8181` (solo container Docker). Board **esterne** su Tailscale: `/etc/hosts` → VM IP per `crossbar` / `iotronic-wstun`, CA lab, vedi `docs/LAB_NETWORK_ACCESS.md`.

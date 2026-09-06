@@ -29,6 +29,6 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ## Documentation
 
-- Italian student guide: `GUIDA_SETUP_CORSISTI.md`
+- Setup guide (IT): `GUIDA_SETUP.md`
 - English commands: `HANDS_ON_COMMANDS.md`
 - Module map and timing: `docs/MODULES.md`

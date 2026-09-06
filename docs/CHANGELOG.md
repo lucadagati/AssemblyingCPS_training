@@ -13,9 +13,9 @@ into this publish repository. Dates are lab VM workdays (Europe/Rome).
 
 ---
 
-## 2026-09-05 — SWC2026 ops, fleets, board logs, SSH-in-LR
+## 2026-09-05 — Lab ops ops, fleets, board logs, SSH-in-LR
 
-### SWC2026 folder (`swc2026/`)
+### Lab ops folder (`lab-ops/`)
 - Scripts to create/destroy manual Lightning-Rod boards without auto-register.
 - Port model: LR UI always `:1474` **inside** container; host maps alpha `:1474` … zeta `:1479`, manuals `:1482+`.
 - `01-run-manual-lr.sh` installs OpenSSH **inside** the container (no host SSH port publish)
@@ -51,5 +51,5 @@ into this publish repository. Dates are lab VM workdays (Europe/Rome).
   Create Lab Board + LR provision via `lr-log-proxy`, English Horizon force,
   WoT/Metrics/FL live iframes.
 
-See also: `docs/LAB_NETWORK_ACCESS.md`, `PORT_FORWARDING.md`, `swc2026/README.md`,
-`GUIDA_SETUP_CORSISTI.md`.
+See also: `docs/LAB_NETWORK_ACCESS.md`, `PORT_FORWARDING.md`, `lab-ops/README.md`,
+`GUIDA_SETUP.md`.

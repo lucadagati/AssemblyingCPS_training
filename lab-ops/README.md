@@ -1,4 +1,4 @@
-# SWC2026 — Stack4Things lab demo scripts
+# Lab ops — Stack4Things manual Lightning-Rod scripts
 
 Cartella operativa per sessioni live (conferenza / corso).  
 Documentazione rete completa: [`../docs/LAB_NETWORK_ACCESS.md`](../docs/LAB_NETWORK_ACCESS.md).
@@ -50,14 +50,14 @@ Sull’host ogni board ha una **porta diversa** mappata su quel 1474:
 | `env.sh` | Default comuni |
 
 ```bash
-cd swc2026   # oppure training/swc2026 nell'albero editoriale
+cd lab-ops   # oppure training/lab-ops nell'albero editoriale
 
 ./00-verify-demo.sh
 ./04-list-lr-dashboards.sh
 
-BOARD_NAME=swc-edge-1 ./01-run-manual-lr.sh
+BOARD_NAME=lab-edge-1 ./01-run-manual-lr.sh
 # Apri l'URL stampato (es. http://<HOST>:1482/)
-# Config: WAMP=wss://crossbar:8181  Code=<stampato>  Hostname=swc-edge-1
+# Config: WAMP=wss://crossbar:8181  Code=<stampato>  Hostname=lab-edge-1
 
 ./02-destroy-manual-lr.sh --delete-board
 ```

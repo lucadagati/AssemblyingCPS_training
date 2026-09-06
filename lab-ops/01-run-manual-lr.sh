@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SWC2026 — create IoTronic board + Lightning-Rod container (NO auto-register).
+# Lab ops — create IoTronic board + Lightning-Rod container (NO auto-register).
 # You register manually in the LR dashboard (first-boot Config page).
 #
 # Important about ports:
@@ -12,7 +12,7 @@
 #
 # Examples:
 #   ./01-run-manual-lr.sh
-#   BOARD_NAME=swc-edge-1 HOST_PORT=1482 ./01-run-manual-lr.sh
+#   BOARD_NAME=lab-edge-1 HOST_PORT=1482 ./01-run-manual-lr.sh
 #   CREATE_BOARD=0 BOARD_NAME=my-board HOST_PORT=1485 ./01-run-manual-lr.sh
 #
 set -euo pipefail
@@ -20,7 +20,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=env.sh
 source "$DIR/env.sh"
 
-BOARD_NAME="${BOARD_NAME:-board-swc-$(date +%H%M%S)}"
+BOARD_NAME="${BOARD_NAME:-board-lab-$(date +%H%M%S)}"
 CONTAINER_NAME="${CONTAINER_NAME:-lightning-rod-${BOARD_NAME}}"
 CONTAINER_NAME="$(echo "$CONTAINER_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_.-]/-/g')"
 HOST_PORT="${HOST_PORT:-}"
@@ -43,7 +43,7 @@ if [[ -z "$HOST_PORT" ]]; then
   HOST_PORT="$(pick_free_port 1482)"
 fi
 
-echo "=== SWC2026 create board + LR (manual registration) ==="
+echo "=== Lab ops create board + LR (manual registration) ==="
 echo "board     : $BOARD_NAME"
 echo "container : $CONTAINER_NAME"
 echo "host UI   : http://${S4T_LAB_HOST}:${HOST_PORT}/   <-- use THIS URL (maps to container :1474)"
@@ -242,7 +242,7 @@ DOCKER_IP=$IP
 ROOT_PASS=$ROOT_PASS
 EOF
 then
-  ALT="/tmp/swc2026-last-manual-lr.env"
+  ALT="/tmp/lab-ops-last-manual-lr.env"
   cat > "$ALT" <<EOF
 BOARD_NAME=$BOARD_NAME
 CONTAINER_NAME=$CONTAINER_NAME

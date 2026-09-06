@@ -43,9 +43,9 @@ DECK_FILES = {
 
 LEGACY_FILENAMES = (
     # Presenter names in filename
-    "Slot1_Longo_Deploy_IOcloud_EN.pptx",
-    "Slot2_Longo_Plugin_Services_EN.pptx",
-    "Slot3_Merlino_IoT_Computation_EN.pptx",
+    "Slot1_Deploy_IOcloud_EN.pptx",
+    "Slot2_Plugin_Services_EN.pptx",
+    "Slot3_IoT_Computation_EN.pptx",
     # Old Slot/Ext/Adv scheme
     "Slot1_Deploy_IOcloud_EN.pptx",
     "Slot2_Plugin_Services_EN.pptx",
