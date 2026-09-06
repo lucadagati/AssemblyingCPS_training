@@ -4,19 +4,19 @@
 
 Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsevier), aligned with the [AssemblingSmartCPS](https://github.com/AssemblingSmartCPS) GitHub organization.
 
-**417 slides** across 10 English PPTX decks (Modules A–I). Slide URLs use placeholder `{{VM_IP}}` — replace with your lab host IP before presenting.
+**417 slides** across 10 English PPTX decks (Modules A–I). Slide and handout URLs use the placeholder `{{VM_IP}}` — replace with your lab host address before presenting.
 
-**Recent lab ops:** see [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) (Tailscale dual ingress, `/lab-ws/` demos, external boards, Lab ops scripts).
+Lab networking and external boards: [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) · change history: [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 ---
 
 ## For students (reproducibility)
 
-1. **Clone this repo** and set your lab IP:
+1. **Clone this repo** and set your lab host IP:
    ```bash
    git clone https://github.com/lucadagati/AssemblyingCPS_training.git
    cd AssemblyingCPS_training
-   cp vm-ip.txt.example vm-ip.txt    # edit: your machine IP (LAN or Tailscale)
+   cp vm-ip.txt.example vm-ip.txt    # edit: address used to reach the lab host
    export S4T_LAB_HOST=$(cat vm-ip.txt)
    ```
 
@@ -36,10 +36,10 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 4. **Follow the lab** using:
    - [`HANDS_ON_COMMANDS.md`](HANDS_ON_COMMANDS.md) — copy-paste commands (EN)
    - [`GUIDA_SETUP.md`](GUIDA_SETUP.md) — setup guide (IT)
-   - [`PORT_FORWARDING.md`](PORT_FORWARDING.md) — browser URLs + `/lab-ws/` demos
-   - [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) — multi-ingress & external boards
+   - [`PORT_FORWARDING.md`](PORT_FORWARDING.md) — browser URLs
+   - [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) — ports and external boards
    - [`docs/BOOK_DIFFERENCES.md`](docs/BOOK_DIFFERENCES.md) — book vs lab
-   - [`lab-ops/`](lab-ops/) — manual LR helpers (manual LR create/destroy)
+   - [`lab-ops/`](lab-ops/) — manual Lightning-Rod create/destroy helpers
    - `slides/Module*.pptx` — decks (Find/Replace `{{VM_IP}}` if needed)
 
 ### Core path deliverables (3 h)
@@ -50,13 +50,13 @@ Modular training material for **Assembling Smart Cyber-Physical Systems** (Elsev
 | B | HelloName Plugin Call output + optional Docker alpine JSON |
 | C | InfluxDB rows in `environmental_data` measurement |
 
-### Demo URLs (any ingress IP)
+### Demo URLs
 
-Prefer path proxy (works for every Tailscale/LAN address of the VM):
+Use the same host as Horizon plus the published WSTUN port:
 
 ```text
-http://{{VM_IP}}/lab-ws/50006/   # wot-fritzing (example port)
-http://{{VM_IP}}/horizon         # Horizon
+http://{{VM_IP}}:50006/   # wot-fritzing (example)
+http://{{VM_IP}}/horizon  # Horizon
 ```
 
 ---
@@ -69,7 +69,7 @@ http://{{VM_IP}}/horizon         # Horizon
 | [`docs/MODULES.md`](docs/MODULES.md) | Module A–I map and prerequisites |
 | [`docs/DEMO_VERIFICATION.md`](docs/DEMO_VERIFICATION.md) | Verified demo matrix |
 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Lab overlay history |
-| [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) | Tailscale / LAN / external board |
+| [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) | Lab host ports / external boards |
 | [`decks/*.py`](decks/) | Slide source — edit and regenerate |
 | [`assets/`](assets/) | Horizon/LR screenshots + architecture PNGs |
 | [`lab-ops/`](lab-ops/) | Manual LR board create / port map |
@@ -110,12 +110,12 @@ See [slides/README.md](slides/README.md) for sequence diagram mapping.
 
 | Item | Description |
 |------|-------------|
-| `vm-ip.txt` | Your lab IP (gitignored — use `vm-ip.txt.example`) |
+| `vm-ip.txt` | Lab host IP for scripts (gitignored — use `vm-ip.txt.example`) |
 | `S4T_LAB_HOST` | Override IP for scripts |
 | `{{VM_IP}}` | Placeholder in slides and docs |
 | Horizon | `admin` / `s4t` |
 | Lightning-Rod | `me` / `arancino` |
-| LR container SSH (lab-ops scripts) | `root` / `arancino` (inside container only; no host port) |
+| LR container SSH (`lab-ops`) | `root` / `arancino` (inside container only; no host port) |
 
 ---
 

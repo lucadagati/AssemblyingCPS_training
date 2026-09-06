@@ -6,7 +6,7 @@
 LAB_OPS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TRAINING_ROOT="$(cd "$LAB_OPS_DIR/.." && pwd)"
 
-# Lab host (Tailscale / public) for Horizon URLs printed to the operator
+# Lab host IP for Horizon URLs printed to the operator
 if [[ -z "${S4T_LAB_HOST:-}" && -f "$TRAINING_ROOT/vm-ip.txt" ]]; then
   S4T_LAB_HOST="$(tr -d '[:space:]' < "$TRAINING_ROOT/vm-ip.txt")"
 fi

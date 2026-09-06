@@ -250,8 +250,8 @@ input[type=text]{border:1px solid #cfd8dc;border-radius:4px;padding:5px 8px;font
 <script>
 function $(id){ return document.getElementById(id); }
 function setText(id,v){ var e=$(id); if(e) e.textContent=v; }
-/* Under /lab-ws/<port>/ absolute /api/* would hit Horizon; prefix with proxy base. */
-var API_BASE=(function(){var m=location.pathname.match(/^(.*?\/lab-ws\/\d+)(?:\/|$)/);return m?m[1]:'';})();
+/* Same-origin relative /api/* when opened at http://host:port/ */
+var API_BASE='';
 function apiUrl(p){ if(!p) return API_BASE||'/'; if(p.charAt(0)!=='/') p='/'+p; return API_BASE+p; }
 function apiPost(p,body){ return fetch(apiUrl(p),{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:body?JSON.stringify(body):''}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json();}); }
 function apiGet(p){ return fetch(apiUrl(p),{headers:{Accept:'application/json'}}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json();}); }

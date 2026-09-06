@@ -414,7 +414,7 @@ function tab(name, btn) {
 
 // ── Sensors ──
 function refreshSensors() {
-  var API_BASE=(function(){var m=location.pathname.match(/^(.*?\/lab-ws\/\d+)(?:\/|$)/);return m?m[1]:'';})();
+  var API_BASE='';
   function apiUrl(p){ if(!p) return API_BASE||'/'; if(p.charAt(0)!=='/') p='/'+p; return API_BASE+p; }
   fetch(apiUrl('/sensors'), {headers:{Accept:'application/json'}})
     .then(function(r){ return r.json(); })

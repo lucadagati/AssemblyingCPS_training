@@ -1,93 +1,90 @@
 # Lab ops — Stack4Things manual Lightning-Rod scripts
 
-Cartella operativa per sessioni live (conferenza / corso).  
-Documentazione rete completa: [`../docs/LAB_NETWORK_ACCESS.md`](../docs/LAB_NETWORK_ACCESS.md).
+Operational helpers for live lab sessions.  
+Network details: [`../docs/LAB_NETWORK_ACCESS.md`](../docs/LAB_NETWORK_ACCESS.md).
 
-## Credenziali
+## Credentials
 
-| Cosa | User / Pass |
+| Item | User / Pass |
 |------|-------------|
 | Horizon | `admin` / `s4t` |
 | Lightning-Rod UI | `me` / `arancino` |
-| SSH **dentro** LR (script `01`) | `root` / `arancino` (override `ROOT_PASS`) — **nessuna** porta SSH pubblicata sull'host |
+| SSH **inside** LR (script `01`) | `root` / `arancino` (override `ROOT_PASS`) — **no** host SSH port published |
 
-## Ingress host (scegli il tuo)
+## Lab host IP
 
-| Ingress | Esempio |
-|---------|---------|
-| LAN | `192.168.100.11` |
-| Tailscale primary | `100.74.114.23` |
-| Tailscale secondary (`lab-secondary`) | `100.123.142.39` |
+Set `vm-ip.txt` / `S4T_LAB_HOST` to the address participants use for Horizon
+(placeholder `{{VM_IP}}` in docs). WoT demos use `http://{{VM_IP}}:<public_port>/`.
 
-Imposta `vm-ip.txt` / `S4T_LAB_HOST` di conseguenza. Le demo WoT usano `http://<HOST>/lab-ws/<porta>/`.
+## Lightning-Rod ports (important)
 
-## Porte LR (importante)
+Inside **every** Lightning-Rod container the dashboard listens on **1474**.  
+On the host each board has a **different** published port mapped to that 1474:
 
-Dentro **ogni** container Lightning-Rod la dashboard ascolta sempre su **1474**.  
-Sull’host ogni board ha una **porta diversa** mappata su quel 1474:
+| Board | Container | Browser URL |
+|-------|-----------|-------------|
+| board-alpha | lightning-rod | `http://{{VM_IP}}:1474/` |
+| board-beta | lightning-rod-2 | `http://{{VM_IP}}:1475/` |
+| board-gamma | lightning-rod-3 | `http://{{VM_IP}}:1476/` |
+| board-delta | lightning-rod-4 | `http://{{VM_IP}}:1477/` |
+| board-epsilon | lightning-rod-5 | `http://{{VM_IP}}:1478/` |
+| board-zeta | lightning-rod-6 | `http://{{VM_IP}}:1479/` |
+| manual boards | `lightning-rod-<name>` | `http://{{VM_IP}}:1482+` (from `01`) |
 
-| Board | Container | Apri nel browser |
-|-------|-----------|------------------|
-| board-alpha | lightning-rod | `http://<HOST>:1474/` |
-| board-beta | lightning-rod-2 | `http://<HOST>:1475/` |
-| board-gamma | lightning-rod-3 | `http://<HOST>:1476/` |
-| board-delta | lightning-rod-4 | `http://<HOST>:1477/` |
-| board-epsilon | lightning-rod-5 | `http://<HOST>:1478/` |
-| board-zeta | lightning-rod-6 | `http://<HOST>:1479/` |
-| board manuali | `lightning-rod-<nome>` | `http://<HOST>:1482+` (assegnata da `01`) |
+Host `:1474` is **alpha only**. Use `./04-list-lr-dashboards.sh` for the full map.
 
-`:1474` sull’host = **solo alpha**. Per le altre board usa la tabella / `./04-list-lr-dashboards.sh`.
+## Scripts
 
-## Script
-
-| Script | Cosa fa |
+| Script | Purpose |
 |--------|---------|
-| `00-verify-demo.sh` | Health-check + ripara la demo |
-| `01-run-manual-lr.sh` | Crea board IoTronic + avvia LR **senza** registrarla; installa `sshd` in-container |
-| `02-destroy-manual-lr.sh` | Rimuove LR (+ `--delete-board`) |
-| `03-print-lr-info.sh` | IP / porte / stato di un container |
-| `04-list-lr-dashboards.sh` | Elenco board → URL dashboard corretto |
-| `env.sh` | Default comuni |
+| `00-verify-demo.sh` | Health-check + repair |
+| `01-run-manual-lr.sh` | Create IoTronic board + start LR **without** auto-register; installs `sshd` in-container |
+| `02-destroy-manual-lr.sh` | Remove LR (+ `--delete-board`) |
+| `03-print-lr-info.sh` | IP / ports / board mapping |
+| `04-list-lr-dashboards.sh` | Board → dashboard URL list |
+| `env.sh` | Shared defaults |
 
 ```bash
-cd lab-ops   # oppure training/lab-ops nell'albero editoriale
+cd lab-ops
 
 ./00-verify-demo.sh
 ./04-list-lr-dashboards.sh
 
 BOARD_NAME=lab-edge-1 ./01-run-manual-lr.sh
-# Apri l'URL stampato (es. http://<HOST>:1482/)
-# Config: WAMP=wss://crossbar:8181  Code=<stampato>  Hostname=lab-edge-1
+# Open the printed URL (e.g. http://{{VM_IP}}:1482/)
+# Config: WAMP=wss://crossbar:8181  Code=<printed>  Hostname=lab-edge-1
 
 ./02-destroy-manual-lr.sh --delete-board
 ```
 
-## Registrazione manuale (dopo `01`)
+## Manual registration (after `01`)
 
-1. Apri l’URL **host port** stampato dallo script (non usare sempre `:1474`)
+1. Open the **host port** URL printed by the script (not always `:1474`)
 2. First-boot Config:
-   - **WAMP / urlwagent** = `wss://crossbar:8181` (solo se LR è un container sulla rete Docker)
-   - **Code** = registration code stampato
-   - **Hostname** = nome board
-3. CONFIGURE → in Horizon la board diventa online
+   - **WAMP / urlwagent** = `wss://crossbar:8181` (Docker network LR containers)
+   - **Code** = printed registration code
+   - **Hostname** = board name
+3. CONFIGURE → board becomes online in Horizon
 
-Per board **fisiche / esterne** su Tailscale: non usare l’hostname Docker `crossbar` senza `/etc/hosts` — vedi `docs/LAB_NETWORK_ACCESS.md` §5.
+For **external** boards (outside Docker): do not rely on Docker DNS alone —
+add `/etc/hosts` entries for `crossbar` / `iotronic-wstun` pointing at `{{VM_IP}}`
+(see `docs/LAB_NETWORK_ACCESS.md`).
 
-## SSH nel container (lab)
+## SSH inside the container
 
-Dopo `01`, dalla lab host:
+From the lab host after `01`:
 
 ```bash
 ssh root@<DOCKER_IP>          # password arancino
-# oppure
+# or
 docker exec -it <CONTAINER> bash
 ```
 
-Nessun `-p 22:22` sull’host.
+No `-p 22:22` on the host.
 
-## Checklist pre-talk
+## Pre-session checklist
 
 1. `./00-verify-demo.sh` → `READY`
-2. `./04-list-lr-dashboards.sh` → URL chiari per il tuo `<HOST>`
-3. Demo WoT: `http://<HOST>/lab-ws/50006/` (ecc.)
-4. Metrics / FL / Web Services come da demo
+2. `./04-list-lr-dashboards.sh` → clear URLs for your `{{VM_IP}}`
+3. WoT demos: `http://{{VM_IP}}:50006/` (and related ports)
+4. Metrics / FL / Web Services as required by the session

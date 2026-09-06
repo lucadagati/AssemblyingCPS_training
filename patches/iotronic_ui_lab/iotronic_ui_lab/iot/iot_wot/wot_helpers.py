@@ -18,11 +18,11 @@ def lab_host(request):
 
 
 def public_url(host, public_port, path="/"):
-    """Direct published WSTUN port on the lab VM (same host as Horizon).
+    """Direct published WSTUN port on the lab host (same host as Horizon).
 
-    Example: http://100.123.142.39:50006/
-    Uses the Host the operator used for Horizon (LAN / Tailscale primary /
-    secondary) so absolute /api/* paths in the demo UIs keep working.
+    Example: http://{{VM_IP}}:50006/
+    Uses the Host the operator used for Horizon so absolute /api/* paths
+    in the demo UIs keep working.
     """
     if not public_port:
         return ""

@@ -8,7 +8,7 @@ fi
 if [ -f /etc/apache2/conf-available/metrics-live-proxy.conf ]; then
   ln -sf /etc/apache2/conf-available/metrics-live-proxy.conf /etc/apache2/conf-enabled/metrics-live-proxy.conf
 fi
-# WoT demos use direct host:port (WSTUN). Do not enable /lab-ws/ proxy.
+# WoT demos use direct published WSTUN host:port URLs (same host as Horizon).
 rm -f /etc/apache2/conf-enabled/00-wot-ws-proxy.conf /etc/apache2/conf-enabled/wot-ws-proxy.conf 2>/dev/null || true
 # Upstream fleet_create omitted "return"; Create Fleet then hits fleet.uuid on None.
 IOT_API=/usr/share/openstack-dashboard/openstack_dashboard/api/iotronic.py

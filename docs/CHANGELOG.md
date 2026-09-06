@@ -5,11 +5,10 @@ into this publish repository. Dates are lab VM workdays (Europe/Rome).
 
 ---
 
-## 2026-09-06 (later) — WoT URLs back to direct host:port
+## 2026-09-06 — Public documentation cleanup
 
-- Horizon Public URLs use `http://<session-host>:<wstun-port>/` again (same VM ingress as Horizon).
-- Removed `/lab-ws/` Apache reverse proxy from lab UI entrypoint/compose (absolute `/api/*` in Fritzing/Weather need same-origin host:port).
-- Do not use `127.0.0.1` from remote browsers.
+- Removed site-specific VPN tooling and host addresses from published docs.
+- Network guides use `{{VM_IP}}` / `vm-ip.txt` only; WoT URLs are `http://{{VM_IP}}:<port>/`.
 
 ---
 

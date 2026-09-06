@@ -1,122 +1,95 @@
-# Lab network access — Tailscale, LAN, external boards, demo URLs
+# Lab network access — ports, URLs, external boards
 
-This document explains how clients reach the Stack4Things lab VM and how to
-attach boards that are **not** Docker containers on the lab host.
+How clients reach the Stack4Things lab host and how to attach boards that are
+**not** Docker containers on that host.
 
----
-
-## 1. Addresses on the lab VM
-
-| Interface | Typical address | Who uses it |
-|-----------|-----------------|-------------|
-| LAN `ens18` | `192.168.100.11/24` | Same L2/L3 campus/lab network |
-| Tailscale primary `tailscale0` | e.g. `100.74.114.23` (`asseblingcps`) | Account A (instructor / lukkinen) |
-| Tailscale secondary `tailscale1` | e.g. `100.123.142.39` (`lab-secondary`) | Account B (e.g. gmerlino) |
-
-Docker publishes S4T ports on **`0.0.0.0`**, so the **same TCP ports** answer on
-LAN and on every Tailscale IP of this VM.
-
-Set `vm-ip.txt` (gitignored) to the IP you want scripts/`S4T_LAB_HOST` to print
-for operators on **your** network (often the primary Tailscale IP).
+Use a single placeholder **`{{VM_IP}}`** (or `vm-ip.txt` / `S4T_LAB_HOST`) for
+the address participants use to open Horizon — LAN, VPN, or any routable IP of
+the lab machine. Do not hardcode site-specific addresses in slides or handouts.
 
 ---
 
-## 2. Ports exposed on the VM (not only Docker-internal)
+## 1. Lab host address
 
-| Port | Service | Needed by external board? |
-|-----:|---------|---------------------------|
-| **80** | Horizon + `/lab-ws/` demo proxy | No (browser only) |
-| **8181** | Crossbar WAMP (`wss`) | **Yes** (registration + online) |
+| Source | Purpose |
+|--------|---------|
+| `vm-ip.txt` (gitignored; from `vm-ip.txt.example`) | Default IP printed by scripts |
+| `S4T_LAB_HOST` | Environment override for the same value |
+| Browser Host header | Horizon WoT panel builds demo URLs from the host you used to open the UI |
+
+Docker publishes Stack4Things ports on **`0.0.0.0`**, so the same TCP ports answer
+on every address assigned to the lab host.
+
+---
+
+## 2. Ports exposed on the lab host
+
+| Port | Service | Needed by an external board? |
+|-----:|---------|------------------------------|
+| **80** | Horizon UI | No (browser) |
+| **8181** | Crossbar WAMP (`wss`) | **Yes** (registration + stay online) |
 | **8080** | WSTUN control | Yes (cloud services / tunnels) |
-| **50001–50100** | WSTUN reverse tunnels | Yes when enabling HTTP/SSH services |
-| 8812 | IoTronic API | No (Horizon/server-side) |
+| **50001–50100** | WSTUN public tunnels | Yes when enabling HTTP/SSH services |
+| 8812 | IoTronic API | No (server-side / Horizon) |
 | 5000 | Keystone | No |
 | 1474–1479+ | Lightning-Rod UIs (lab containers) | No |
 
-**Not published:** `iotronic-wagent` (Docker-only). Boards talk to **Crossbar**,
-not directly to wagent.
+**Not published:** `iotronic-wagent` (Docker network only). Boards talk to
+**Crossbar**, not directly to wagent.
 
-Docker DNS names (`crossbar`, `iotronic-wstun`) resolve **only** on the compose
-network. External devices must use the VM IP and/or `/etc/hosts` aliases.
+Docker DNS names (`crossbar`, `iotronic-wstun`) resolve **only** inside the
+compose network. External devices must use `{{VM_IP}}` and/or `/etc/hosts`
+aliases (see below).
 
 ---
 
-## 3. Demo / WoT URLs (same VM host as Horizon)
+## 3. Demo / WoT public URLs
 
-Horizon builds Public URLs as **direct published ports** on the same host you
-used to open the dashboard (no reverse-proxy path):
+Horizon builds Public URLs as **direct published ports** on the same host used
+for the dashboard:
 
 ```text
-http://<host-you-used-for-Horizon>:<public_port>/
+http://{{VM_IP}}:<public_port>/
 ```
 
-Examples:
+Examples (replace `{{VM_IP}}` and ports with your lab values):
 
-| Ingress | wot-fritzing |
-|---------|--------------|
-| Primary Tailscale | `http://100.74.114.23:50006/` |
-| Secondary Tailscale | `http://100.123.142.39:50006/` |
-| LAN | `http://192.168.100.11:50006/` |
+| Service (typical) | URL |
+|-------------------|-----|
+| wot-fritzing | `http://{{VM_IP}}:50006/` |
+| weather-wot | `http://{{VM_IP}}:50064/` |
+| lr-nginx-demo | `http://{{VM_IP}}:50008/` |
 
-Do **not** use `http://127.0.0.1:50006/` from a remote browser: that address is
-the client machine, not the lab VM.
-
-Optional path proxy on `:80` (`/lab-ws/<port>/`) remains available for same-origin
-embedding tricks, but the WoT panel prefers `host:port` so demo UIs with absolute
-`/api/*` paths keep working.
-
-Apache config (optional): `patches/apache-wot-ws-proxy.conf`.
+Do **not** use `http://127.0.0.1:<port>/` from a remote browser: that address is
+the client machine, not the lab host.
 
 ---
 
-## 4. Dual Tailscale (`lab-secondary`) — self-service
+## 4. External board (physical or VM outside Docker)
 
-If a second account needs its own node on **this** VM:
+Goal: a board on the same IP network (or VPN) as the lab host, online in IoTronic.
 
-| | Primary | Secondary |
-|--|---------|-----------|
-| systemd | `tailscaled` | `tailscaled2` |
-| socket | `/run/tailscale/tailscaled.sock` | `/run/tailscale2/tailscaled.sock` |
-| state | `/var/lib/tailscale/` | `/var/lib/tailscale2/` |
-| TUN / UDP | `tailscale0` / 41641 | `tailscale1` / 41642 |
-| CLI helper | `tailscale` | `lab-secondary-ts` |
+### 4.1 Create the board in Horizon
+IoT → Create Board → copy the **registration code**.
+
+### 4.2 Match the Crossbar TLS name (recommended)
+The lab Crossbar certificate uses CN `crossbar`. On the board:
 
 ```bash
-sudo systemctl status tailscaled2
-sudo systemctl start tailscaled2          # if down
-lab-secondary-ts up --hostname=lab-secondary
-lab-secondary-ts status
-lab-secondary-ts ip -4
+# Point names at the lab host IP the board can route to
+echo "{{VM_IP}} crossbar iotronic-wstun" | sudo tee -a /etc/hosts
 ```
 
-Users on the **secondary** tailnet open Horizon/demos via the secondary IP
-(e.g. `100.123.142.39`), **not** the primary `100.74.114.23` (different tailnet).
-
----
-
-## 5. External board on the same Tailscale (or LAN)
-
-Goal: a physical/virtual board outside Docker, online in IoTronic.
-
-### 5.1 Create the board in Horizon
-IoT → Create Board → copy **registration code**.
-
-### 5.2 Make TLS hostname match (recommended)
-Crossbar cert CN is `crossbar`. On the board:
-
-```bash
-# Point names at the lab VM (use the Tailscale or LAN IP that board can route)
-echo "<LAB_VM_IP> crossbar iotronic-wstun" | sudo tee -a /etc/hosts
-```
-
-Install the lab CA (from the VM):
+Install the lab CA (from the lab host):
 
 ```bash
 docker exec crossbar cat /node/.crossbar/ssl/iotronic_CA.pem
-# install into LR ssl trust store on the board (/var/lib/iotronic/ssl/ …)
+# install into the Lightning-Rod trust store on the board
+# (typically under /var/lib/iotronic/ssl/)
 ```
 
-### 5.3 Lightning-Rod first-boot Config
+### 4.3 Lightning-Rod first-boot Config
+
 | Field | Value |
 |-------|--------|
 | WAMP / urlwagent | `wss://crossbar:8181/` |
@@ -124,46 +97,45 @@ docker exec crossbar cat /node/.crossbar/ssl/iotronic_CA.pem
 | Hostname | board name |
 | Realm | `s4t` (lab default) |
 
-Alternative without `/etc/hosts`: `wss://<LAB_VM_IP>:8181/` — often fails TLS
-verify (CN ≠ IP); avoid unless you disable verification.
+Alternative without `/etc/hosts`: `wss://{{VM_IP}}:8181/` — TLS verification often
+fails (CN ≠ IP); prefer the hosts alias.
 
-### 5.4 Connectivity checks from the board
+### 4.4 Connectivity checks from the board
 
 ```bash
-ping -c2 <LAB_VM_IP>
+ping -c2 {{VM_IP}}
 nc -vz crossbar 8181
 nc -vz iotronic-wstun 8080
 ```
 
-### 5.5 Cloud services (SSH tunnel, HTTP expose)
-Ensure `wstun` is reachable (hosts entry or `wstun_ip` = lab VM IP). Public HTTP
-services then appear under `/lab-ws/<port>/` when opened through Horizon.
+### 4.5 Cloud services (SSH tunnel, HTTP expose)
+Ensure WSTUN is reachable (hosts entry or `wstun_ip` = lab host IP). Exposed HTTP
+services are then reachable at `http://{{VM_IP}}:<public_port>/`.
 
 ---
 
-## 6. Operator quick reference
+## 5. Operator quick reference
 
 ```bash
-# Which IP am I advertising?
-tailscale ip -4
-lab-secondary-ts ip -4 2>/dev/null || true
-ip -4 addr show ens18 | grep inet
+# Address used by scripts
+cat vm-ip.txt
+echo "$S4T_LAB_HOST"
 
-# Is Crossbar / wstun published?
-ss -lntp | grep -E ':8181|:8080|:80 '
+# Published listeners on the lab host
+ss -lntp | grep -E ':8181|:8080|:80 |:8812'
 
-# Demo path health
-curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1/lab-ws/50006/
+# Demo health (example ports — adjust to your deployment)
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:50006/
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:50006/api/circuit
 ```
 
 ---
 
-## 7. Related files
+## 6. Related files
 
 | Path | Role |
 |------|------|
-| `vm-ip.txt` / `vm-ip.txt.example` | Operator-facing IP for scripts |
+| `vm-ip.txt` / `vm-ip.txt.example` | Operator-facing lab host IP for scripts |
 | `PORT_FORWARDING.md` | Browser URL tables |
-| `lab-ops/` | Conference create/destroy LR helpers |
-| `patches/apache-wot-ws-proxy.conf` | `/lab-ws/` proxy |
+| `lab-ops/` | Manual Lightning-Rod create/destroy helpers |
 | `experiments/multiboard/lr_log_proxy.py` | LR provision + log tail |

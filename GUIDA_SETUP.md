@@ -108,7 +108,6 @@ docker compose -f docker-compose.yml -f ../../patches/docker-compose.lab.yml ps
 | 3000 | Grafana (overlay lab) |
 | 8181 | Crossbar WAMP |
 | 8812 | IoTronic Conductor API |
-| 80 (+ `/lab-ws/<port>/`) | Horizon + proxy demo WoT/WSTUN (indipendente dall'IP Tailscale) |
 
 Vedi anche: [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) · [`docs/CHANGELOG.md`](docs/CHANGELOG.md) · [`lab-ops/README.md`](lab-ops/README.md)
 
@@ -325,7 +324,7 @@ Porte lab: Flower gRPC **8087** (WSTUN usa :8080), dashboard **8090**, control A
 
 **Note IoT dashboard:** **Fleets** si gestisce dal pannello IoT (create + Members + Operations). Menu Horizon in inglese di default sul lab VM. Plugin Call: i log `LOG.info` compaiono nel pannello log board (file LR, non solo `docker logs`).
 
-**Demo WoT (URL indipendenti dall'IP Tailscale):** `http://<IP>/lab-ws/<porta>/` — vedi [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) e [`PORT_FORWARDING.md`](PORT_FORWARDING.md).
+**Demo WoT:** `http://<IP>:<porta_pubblica>/` (stesso host di Horizon) — vedi [`docs/LAB_NETWORK_ACCESS.md`](docs/LAB_NETWORK_ACCESS.md) e [`PORT_FORWARDING.md`](PORT_FORWARDING.md).
 
 CLI alternativa (debug): `./experiments/federated-learning/fl-server-ctl.sh start|stop|restart`
 
@@ -344,7 +343,7 @@ cd training/lab-ops
 BOARD_NAME=lab-edge-1 ./01-run-manual-lr.sh   # installa anche sshd in-container (no porta host)
 ```
 
-Registrazione: WAMP `wss://crossbar:8181` (solo container Docker). Board **esterne** su Tailscale: `/etc/hosts` → VM IP per `crossbar` / `iotronic-wstun`, CA lab, vedi `docs/LAB_NETWORK_ACCESS.md`.
+Registrazione: WAMP `wss://crossbar:8181` (solo container Docker). Board **esterne** (fuori Docker): `/etc/hosts` → VM IP per `crossbar` / `iotronic-wstun`, CA lab, vedi `docs/LAB_NETWORK_ACCESS.md`.
 
 Create Fleet: se compare *Unable to create fleet* / `uuid` su `None`, l'entrypoint UI applica già il `return` su `fleet_create`. Prima di Delete Fleet, scollega i membri (FK su `boards.fleet`).
 
