@@ -18,20 +18,18 @@ def lab_host(request):
 
 
 def public_url(host, public_port, path="/"):
-    """Path on :80 — independent of which Tailscale IP opened Horizon.
+    """Direct published WSTUN port on the lab VM (same host as Horizon).
 
-    Example: http://100.123.142.39/lab-ws/50006/
-    Direct host:port URLs remain reachable but are not shown in the panel.
+    Example: http://100.123.142.39:50006/
+    Uses the Host the operator used for Horizon (LAN / Tailscale primary /
+    secondary) so absolute /api/* paths in the demo UIs keep working.
     """
     if not public_port:
         return ""
     path = path or "/"
     if not path.startswith("/"):
         path = "/" + path
-    base = "http://{0}/lab-ws/{1}".format(host, int(public_port))
-    if path == "/":
-        return base + "/"
-    return base + path
+    return "http://{0}:{1}{2}".format(host, int(public_port), path)
 
 
 def collect_wot_tunnels(request, boards):

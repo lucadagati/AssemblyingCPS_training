@@ -41,26 +41,31 @@ network. External devices must use the VM IP and/or `/etc/hosts` aliases.
 
 ---
 
-## 3. Demo / WoT URLs independent of Tailscale IP
+## 3. Demo / WoT URLs (same VM host as Horizon)
 
-Horizon shows Public URLs as:
+Horizon builds Public URLs as **direct published ports** on the same host you
+used to open the dashboard (no reverse-proxy path):
 
 ```text
-http://<host-you-used-for-Horizon>/lab-ws/<public_port>/
+http://<host-you-used-for-Horizon>:<public_port>/
 ```
 
-Examples (same path, different ingress):
+Examples:
 
 | Ingress | wot-fritzing |
 |---------|--------------|
-| Primary Tailscale | `http://100.74.114.23/lab-ws/50006/` |
-| Secondary Tailscale | `http://100.123.142.39/lab-ws/50006/` |
-| LAN | `http://192.168.100.11/lab-ws/50006/` |
+| Primary Tailscale | `http://100.74.114.23:50006/` |
+| Secondary Tailscale | `http://100.123.142.39:50006/` |
+| LAN | `http://192.168.100.11:50006/` |
 
-Direct URLs `http://<host>:50006/` still work (ports are published) but prefer
-`/lab-ws/` in slides and student sheets.
+Do **not** use `http://127.0.0.1:50006/` from a remote browser: that address is
+the client machine, not the lab VM.
 
-Apache config: `patches/apache-wot-ws-proxy.conf` (enabled as `00-wot-ws-proxy.conf`).
+Optional path proxy on `:80` (`/lab-ws/<port>/`) remains available for same-origin
+embedding tricks, but the WoT panel prefers `host:port` so demo UIs with absolute
+`/api/*` paths keep working.
+
+Apache config (optional): `patches/apache-wot-ws-proxy.conf`.
 
 ---
 

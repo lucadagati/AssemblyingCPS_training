@@ -5,22 +5,11 @@ into this publish repository. Dates are lab VM workdays (Europe/Rome).
 
 ---
 
-## 2026-09-06 — Network-independent demo URLs + dual Tailscale
+## 2026-09-06 (later) — WoT URLs back to direct host:port
 
-### WoT / WSTUN public URLs (`/lab-ws/<port>/`)
-- Apache reverse proxy on Horizon `:80` maps `/lab-ws/50001/` … `/lab-ws/50100/` to
-  the corresponding host `docker-proxy` ports (`host.docker.internal:<port>`).
-- Horizon **Web Services (WoT)** panel builds Public URLs as
-  `http://<HTTP_Host>/lab-ws/<public_port>/` so lukkinen Tailscale, gmerlino
-  Tailscale, and LAN (`192.168.100.11`) share the **same path**.
-- Files: `patches/apache-wot-ws-proxy.conf`, `patches/iotronic-ui-lab-entrypoint.sh`,
-  `patches/docker-compose.lab.yml`, `patches/iotronic_ui_lab/.../iot_wot/wot_helpers.py`.
-
-### Dual Tailscale on one VM (`lab-secondary`)
-- Second `tailscaled` instance (systemd `tailscaled2`) for a second account/tailnet.
-- State `/var/lib/tailscale2/`, socket `/run/tailscale2/tailscaled.sock`, TUN `tailscale1`, UDP `41642`.
-- Helper: `/usr/local/bin/lab-secondary-ts` (not in git; recreate with unit file docs).
-- Documented in `docs/LAB_NETWORK_ACCESS.md`.
+- Horizon Public URLs use `http://<session-host>:<wstun-port>/` again (same VM ingress as Horizon).
+- Removed `/lab-ws/` Apache reverse proxy from lab UI entrypoint/compose (absolute `/api/*` in Fritzing/Weather need same-origin host:port).
+- Do not use `127.0.0.1` from remote browsers.
 
 ---
 

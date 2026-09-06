@@ -25,19 +25,21 @@ Copy `vm-ip.txt.example` → `vm-ip.txt` for scripts (`S4T_LAB_HOST`).
 
 Credentials: Horizon `admin` / `s4t` · Lightning-Rod `me` / `arancino` · InfluxDB/Grafana `admin` / `admin`
 
-## WoT / WSTUN demos (path URLs — preferred)
+## WoT / WSTUN demos (direct host:port — preferred)
 
-Do **not** hardcode a single Tailscale IP in slides. Use path proxy on port 80:
+Use the **same host** you open Horizon with, plus the published WSTUN port
+(same VM; no reverse-proxy path):
 
 | Demo (typical) | URL |
 |----------------|-----|
-| wot-fritzing | `http://{{VM_IP}}/lab-ws/50006/` |
-| weather-wot | `http://{{VM_IP}}/lab-ws/50064/` |
-| lr-nginx-demo | `http://{{VM_IP}}/lab-ws/50008/` |
+| wot-fritzing | `http://{{VM_IP}}:50006/` |
+| weather-wot | `http://{{VM_IP}}:50064/` |
+| lr-nginx-demo | `http://{{VM_IP}}:50008/` |
 
-Direct `http://{{VM_IP}}:50006/` still works; `/lab-ws/` is Tailscale-agnostic.
+Do not use `127.0.0.1` from a remote browser. Horizon **Web Services (WoT)**
+builds these URLs from your session Host header.
 
-Horizon panel **IoT → Web Services (WoT)** lists Public URLs using the Host header of your session.
+Optional: `/lab-ws/<port>/` on `:80` still works as a same-origin proxy.
 
 ## IoT dashboards
 

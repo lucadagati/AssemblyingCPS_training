@@ -324,7 +324,6 @@ services:
       - ../../experiments/federated-learning/.run:/opt/fl_lab_run:rw
       - ../../patches/apache-fl-live-proxy.conf:/etc/apache2/conf-available/fl-live-proxy.conf:ro
       - ../../patches/apache-metrics-live-proxy.conf:/etc/apache2/conf-available/metrics-live-proxy.conf:ro
-      - ../../patches/apache-wot-ws-proxy.conf:/etc/apache2/conf-available/wot-ws-proxy.conf:ro
       - ../../patches/iotronic-ui-lab-entrypoint.sh:/opt/lab/iotronic-ui-lab-entrypoint.sh:ro
 
 volumes:
